@@ -11,7 +11,7 @@ services:
       - DATABASE_USER=evalia
       - DATABASE_PASSWORD=evaliapassword
       - DATABASE_NAME=evaliadb
-      - DATABASE_PORT=5433
+      - DATABASE_PORT=5432
     volumes:
       - ./:/app:ro
     restart: always
