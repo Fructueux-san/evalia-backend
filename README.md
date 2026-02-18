@@ -9,13 +9,6 @@ une DB Postgresql et du scripting bash
 
 
 
-### Les migration
-
-```bash
-flask db init
-flask db migrate
-
-```
 
 ## Pour lancer le projet 
 
@@ -27,6 +20,17 @@ docker compose up -d
 2. **En dev**
 ```bash
 docker compose -f docker-compose.dev.yaml -d 
+```
+
+... ensuite 
+
+### Les migration
+
+```bash
+docker exec -it backend-evalia flask db init # A faire une seule fois
+docker exec -it backend-evalia flask db migrate # Lancer tout les migrations (a faire généralement une fois) 
+docker exec -it backend-evalia flask db update # Quand on met à jour un model et on veux répercuper sur la base
+
 ```
 
 ## Pour voir les logs des containers

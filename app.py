@@ -9,6 +9,9 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 # la docs sera disponible sur /apidocs
 Swagger(app, config=swagger_config, template=swagger_template)
 
+# Pour qu'il y ai une prise en charge des migrations
+from confs.main import db
+from models import *
 
 
 # Quand vous créez un fichier de blueprint, venez l'enregistrer ici
