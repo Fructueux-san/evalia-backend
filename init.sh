@@ -1,6 +1,6 @@
 #! /bin/bash
 
-if [$ENV_EVALIA == "PROD"]; then
+if [ $ENV_EVALIA == "PROD" ]; then
   python3 -m pytest -v tests/APITesting.py -o cache_dir=/tmp &&
     gunicorn -w 5 -b '0.0.0.0:8000' 'app:app'   \
     --log-level debug \

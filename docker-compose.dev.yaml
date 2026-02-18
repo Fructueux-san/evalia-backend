@@ -1,0 +1,45 @@
+services:
+  backend:
+    container_name: backend-evalia
+    hostname: backend-evalia
+    build: . 
+    ports:
+      - "8000:8000"
+    environment:
+      - ENV_EVALIA=ENV
+      - DATABASE_HOST=database-evalia
+      - DATABASE_USER=evalia
+      - DATABASE_PASSWORD=evaliapassword
+      - DATABASE_NAME=evaliadb
+      - DATABASE_PORT=5432
+    volumes:
+      - ./:/app
+    restart: always
+    networks:
+      - evalia-net
+
+
+  database:
+    image: postgres:14
+    container_name: database-evalia
+    hostname: database-evalia
+    environment:
+      POSTGRES_USER: evalia
+      POSTGRES_PASSWORD: evaliapassword
+      PGDATA: /data/postgres
+      POSTGRES_DB: evaliadb
+    ports:
+      - "5433:5432"
+    networks:
+      - evalia-net
+    volumes:
+      - data:/data/postgres
+
+
+volumes:
+  data:
+    driver: local
+
+networks:
+  evalia-net:
+    driver: bridge
