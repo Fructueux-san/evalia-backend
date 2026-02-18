@@ -7,3 +7,12 @@ dans un contexte de compétition
 API écrit en Python (Flask), avec un peu de docker (via compose), 
 une DB Postgresql et du scripting bash
 
+
+
+### Les migration
+
+```bash
+flask db init
+flask db migrate
+
+```

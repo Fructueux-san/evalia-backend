@@ -7,10 +7,10 @@ services:
       - "8000:8000"
     environment:
       - ENV_EVALIA=PROD
-      - DATABASE_HOST=196.192.16.26
+      - DATABASE_HOST=database-evalia
       - DATABASE_USER=evalia
       - DATABASE_PASSWORD=evaliapassword
-      - DATABASE_NAME=avaliadb
+      - DATABASE_NAME=evaliadb
       - DATABASE_PORT=5433
     volumes:
       - ./:/app:ro
@@ -24,10 +24,10 @@ services:
     container_name: database-evalia
     hostname: database-evalia
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: evalia
+      POSTGRES_PASSWORD: evaliapassword
       PGDATA: /data/postgres
-      POSTGRES_DB: bank
+      POSTGRES_DB: evaliadb
     ports:
       - "5433:5432"
     networks:
@@ -37,8 +37,6 @@ services:
 
 
 volumes:
-  cache:
-    driver: local
   data:
     driver: local
 

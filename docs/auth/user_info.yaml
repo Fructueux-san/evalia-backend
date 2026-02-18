@@ -1,0 +1,33 @@
+
+Route pour les infos utilisateurs
+---
+tags:
+  - Authentication
+summary: Information global d'un user.
+description: Récupère les informations d'une étudiant à partir de son username
+consumes:
+  - application/json
+produce:
+  - application/json
+
+# A décommenter si le auth jwt est déjà activé:
+# security:
+#   - apiKey: []
+
+parameters:
+  - name: username
+    in: path
+    required: true
+    type: string
+        
+responses:
+  200:
+    description: OK
+  500:
+    description: "internal error. "
+  400:
+    description: "Entrée invalid. Données incorects."
+  404: 
+    description: "Donnée non trouvée !"
+  403: 
+    description: Interdit 
