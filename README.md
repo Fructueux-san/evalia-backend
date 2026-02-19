@@ -29,7 +29,7 @@ docker compose -f docker-compose.dev.yaml up -d
 ```bash
 docker exec -it backend-evalia flask db init # A faire une seule fois
 docker exec -it backend-evalia flask db migrate # Lancer tout les migrations (a faire généralement une fois) 
-docker exec -it backend-evalia flask db update # Quand on met à jour un model et on veux répercuper sur la base
+docker exec -it backend-evalia flask db upgrade # Quand on met à jour un model et on veux répercuper sur la base
 
 ```
 
