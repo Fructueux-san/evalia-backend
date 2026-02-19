@@ -1,3 +1,4 @@
+import logging
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy 
 from flask_migrate import Migrate
@@ -7,6 +8,7 @@ from sqlalchemy.orm import DeclarativeBase
 from flask_jwt_extended import JWTManager, create_access_token
 
 from confs.db import Database
+from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
 
@@ -41,3 +43,11 @@ app.config["SECRET_KEY"] = environ.get("APP_SECRET_KEY")
 app.config["JWT_SECRET_KEY"] = environ.get("JWT_SECRET_KEY")
 app.config['JWT_TOKEN_LOCATION'] = ['headers']
 JWTManager(app)
+
+
+# ceci permet de faire l'encryption des passwords
+bcrypt = Bcrypt(app)
+
+# Configuration du logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)

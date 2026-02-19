@@ -8,9 +8,7 @@ class RegisterSchema(Schema):
     username = fields.Str(required=True, validate=lambda x: len(x) >= 3)
     email = fields.Email(required=True)
     password = fields.Str(required=True, validate=lambda x: len(x) >= 6)
-    first_name = fields.Str(required=False)
-    last_name = fields.Str(required=False)
-    phone = fields.Str(required=False)
+    name = fields.Str(required=True, error_messages={"error": "Votre nom est requis"})
 
 class LoginSchema(Schema):
     username = fields.Str(required=True)

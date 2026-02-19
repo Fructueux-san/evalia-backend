@@ -1,0 +1,44 @@
+Création de compte utilisateur
+---
+description: Créer un compte pour un utilisateur de l'app
+tags:
+  - Auth
+consumes:
+  - application/json
+produce:
+  - application/json
+parameters:
+  - name: data
+    in: body
+    type: object
+    required:
+      - name
+      - username
+      - password
+      - email
+    properties:
+      name: 
+        type: string
+        description: Identité du user
+        example: "John DOE"
+      email: 
+        type: string
+        description: "User email."
+        example: "test@email.com"
+      password:
+        type: string
+        description: Son mot de passe
+      username: 
+        type: string
+        description: Le username choisit par le nouvel utilisateur
+responses:
+  200:
+    description: successful
+  400:
+    description: Bad request
+  401: 
+    description: Invalid credentials
+  500:
+    description: Internal server error
+  415:
+    description: Unsupported media type. Content-Type must be application/json
