@@ -19,7 +19,7 @@ docker compose up -d
 ```
 2. **En dev**
 ```bash
-docker compose -f docker-compose.dev.yaml -d 
+docker compose -f docker-compose.dev.yaml up -d 
 ```
 
 ... ensuite 
