@@ -12,6 +12,8 @@ services:
       - DATABASE_PASSWORD=evaliapassword
       - DATABASE_NAME=evaliadb
       - DATABASE_PORT=5432
+      - APP_SECRET_KEY=jiAjEyrhVgcT0h3yBs9wRnZyWjhiWczu4dOUZ5kTJkw=
+      - JWT_SECRET_KEY=j0jcRbOdGHXhXr+98TPZLwS1TDPhQpYlbYndMssvMnE=
     volumes:
       - ./:/app:ro
     restart: always
