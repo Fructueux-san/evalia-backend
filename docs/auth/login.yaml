@@ -1,0 +1,36 @@
+Le login
+---
+description: Endpoint utilisé par un user pour se connecter
+summary: Connexion utilisateur
+tags:
+  - Auth
+consumes:
+  - application/json
+produce:
+  - application/json
+parameters:
+  - name: data
+    in: body
+    type: object
+    properties:
+      username: 
+        type: string
+        description: Le username
+        example: blinkman678
+      password:
+        type: password
+        description: The password
+        example: Thegovermentlikeus
+responses:
+  200:
+    description: successful
+  400:
+    description: Bad request
+  401: 
+    description: Invalid credentials
+  403: 
+    description: Interdit 
+  500:
+    description: Internal server error
+  415:
+    description: Unsupported media type. Content-Type must be application/json
