@@ -56,3 +56,17 @@ Référer vous au nom du service dans les fichier compose
 docker compose down backend
 ```
 
+
+## Flower 
+L'app utilise celery avec redis pour les tâches async et queueing.
+Il est accessible sur `http://localhost:5555` après le lancement du backend. 
+
+Veuillez à ce que tous les services du docker compose soient lancés. 
+
+
+# Architecture 
+Celery et redis sont utilisé pour récupérer des tâches à lancer en arrière plan
+(comme l'exécution des modèles dans notre cas) ; 
+et ensuite créer un environement de conteneur docker à la volé pour l'exécuton des 
+modèles en sandbox. 
+
