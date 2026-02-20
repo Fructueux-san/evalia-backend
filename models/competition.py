@@ -30,5 +30,8 @@ class Competition(db.Model):
     participants = relationship('User', secondary=participations, back_populates='participations_list')
 
     creator = relationship("User", back_populates="created_competitions")
-
+    
+    raw_dataset_path = Column(String(500), nullable=False)    # Dataset brut
+    processed_dataset_path = Column(String(500), nullable=False) # Dataset traité 
+    evaluation_metric = Column(String(50), default="accuracy")
 

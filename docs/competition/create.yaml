@@ -1,0 +1,51 @@
+Créer une nouvelle compétition
+---
+summary: Formulaire de création d'une compétition
+description: Création d'une nouvelle compétition avec upload de datasets. L'endpoint attend un formulaire multipart contenant les métadonnées et les fichiers CSV/JSON.
+tags:
+  - Competitions
+parameters:
+  - name: name
+    in: formData
+    type: string
+    required: true
+    description: Le nom de la compétition d'IA.
+  - name: description
+    in: formData
+    type: string
+    required: false
+    description: Une description détaillée des objectifs.
+  - name: creator_id
+    in: formData
+    type: string
+    format: uuid
+    required: true
+    description: L'UUID de l'utilisateur créateur.
+  - name: raw_dataset
+    in: formData
+    type: file
+    required: true
+    description: Le fichier dataset brut (ex CSV) que les participants devront traiter.
+  - name: processed_dataset
+    in: formData
+    type: file
+    required: true
+    description: Le fichier de vérité terrain (labels) utilisé pour le calcul du score.
+responses:
+  201:
+    description: Compétition créée avec succès.
+    schema:
+      properties:
+        id:
+          type: string
+          format: uuid
+        message:
+          type: string
+          example: "Compétition créée"
+  400:
+    description: Erreur de validation (fichiers manquants ou format invalide).
+    schema:
+      properties:
+        error:
+          type: string
+          example: "Deux fichiers (raw et processed) sont requis"

@@ -4,6 +4,7 @@ import os
 from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 from confs.main import celery
+from utils.generic import allowed_file
 
 from celery.result import AsyncResult
 
@@ -11,13 +12,11 @@ from celery.result import AsyncResult
 
 eval_bp = Blueprint("evaluation", __name__)
 
-ALLOWED_EXTENDIONS = {'h5', 'pkl', 'pt', 'onnx'}
-UPLOAD_FOLDER = '/app/upload'
+ALLOWED_EXTENDIONS = ['h5', 'pkl', 'pt', 'onnx']
+UPLOAD_FOLDER = '/app/uploads'
 HOST_PATH = os.getenv("HOST_UPLOAD_PATH")
 
 
-def allowed_file(filename: str):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENDIONS
 
 @eval_bp.route("/eval/all-type", methods=["GET"])
 def les_type_d_evaluation_existants():
@@ -32,7 +31,7 @@ def evaluation_model():
     file = request.files.get("model")
     data = request.form.to_dict()
 
-    if not file or not allowed_file(file.filename if file.filename is not None else ''):
+    if not file or not allowed_file(file.filename if file.filename is not None else '', ALLOWED_EXTENDIONS):
         return jsonify({"error": "Extension non autorisée"}), 400
 
     filename = secure_filename(file.filename)
