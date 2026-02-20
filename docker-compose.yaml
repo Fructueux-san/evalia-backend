@@ -58,6 +58,8 @@ services:
 
 
 volumes:
+  cache:
+    driver: local
   data:
     driver: local
 

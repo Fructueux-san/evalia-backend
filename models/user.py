@@ -1,9 +1,10 @@
 from datetime import datetime
 import enum
 from uuid import uuid4
-from sqlalchemy.schema import Column
-from sqlalchemy.types import UUID, Boolean, DateTime, Enum
+from sqlalchemy.orm import relationship
+from sqlalchemy.types import UUID, Boolean, DateTime
 from confs.main import db
+from .competition import participations
 
 
 
@@ -29,6 +30,11 @@ class User(db.Model):
     # role = Column(Enum(Roles), default=Roles.PARTICIPANT)
     created_at = db.Column(DateTime(), default=datetime.now())
     updated_at = db.Column(DateTime(), default=datetime.now())
+
+    participations_list = relationship("Competition",secondary=participations,back_populates="participants")
+
+    # Les compétitions qu'il a créées
+    created_competitions = relationship("Competition", back_populates="creator")
 
     def __repr__(self) -> str:
         return f"<User: {self.name} | {self.username}>"
