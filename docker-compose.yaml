@@ -16,6 +16,7 @@ services:
       - JWT_SECRET_KEY=j0jcRbOdGHXhXr+98TPZLwS1TDPhQpYlbYndMssvMnE=
       - CACHE_HOST=redis-evalia
       - CACHE_PORT=6379
+      - CACHE_PASSWORD=kjUsjcpc239nsBB
     volumes:
       - ./:/app:ro
     restart: always
