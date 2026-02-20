@@ -4,6 +4,8 @@ from confs.main import app
 from flask_cors import CORS
 from flasgger import Swagger
 from confs.swagger import swagger_config, swagger_template
+from blueprints.competition import competition_bp
+from blueprints.evaluation import eval_bp
 
 
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -18,6 +20,8 @@ from models import *
 
 # Quand vous créez un fichier de blueprint, venez l'enregistrer ici
 app.register_blueprint(user_bp, url_prefix="/api")
+app.register_blueprint(competition_bp, url_prefix="/api")
+app.register_blueprint(eval_bp, url_prefix="/api")
 
 if __name__ == "__main__":
     app.run(port=8000, host="0.0.0.0", debug=True)

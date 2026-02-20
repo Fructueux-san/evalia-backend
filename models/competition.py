@@ -1,20 +1,19 @@
 
 from datetime import datetime
-from sqlalchemy import Column, ForeignKey, Table
+from sqlalchemy import Column, ForeignKey
 from sqlalchemy.orm import relationship
-from confs.main import Base, db
+from confs.main import db
 from sqlalchemy.types import UUID, DateTime, String
 from uuid import uuid4
 
 
-participations = Table(
+participations = db.Table(
         'participations_competitions', 
-        Base.metadata,
-        Column("user_id", ForeignKey("users.id"), primary_key=True),
-        Column("competition_id", ForeignKey("competitions.id"), primary_key=True),
-        Column("team_name", String(100), nullable=True),
-        Column("created_at", DateTime(), default=datetime.now),
-        Column("updated_at", DateTime(), default=datetime.now)
+        db.Column("user_id", db.UUID(as_uuid=True), db.ForeignKey("users.id"), primary_key=True),
+        db.Column("competition_id", db.UUID(as_uuid=True), db.ForeignKey("competitions.id"), primary_key=True),
+        db.Column("team_name", String(100), nullable=True),
+        db.Column("created_at", DateTime(), default=datetime.now),
+        db.Column("updated_at", DateTime(), default=datetime.now)
 )
 
 class Competition(db.Model):

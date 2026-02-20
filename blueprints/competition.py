@@ -1,5 +1,5 @@
 import os 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, abort, request, jsonify, send_file
 from werkzeug.utils import secure_filename
 from confs.main import db
 
@@ -21,7 +21,7 @@ def create_competition():
         return jsonify({'error': "Deux fichier(raw et processed) sont requis"}), 400
 
     raw_file = request.files['raw_dataset']
-    processed_file = request.files["processed_data"]
+    processed_file = request.files["processed_dataset"]
 
     name = request.form.get("name")
     creator_id = request.form.get('creator_id')
@@ -61,3 +61,39 @@ def create_competition():
         return jsonify({"message": "Compétition créée", "id": new_comp.id}), 201
 
     return jsonify({"error": "Format de fichier non autorisé"}), 400
+
+
+
+
+@competition_bp.route('/competitions/<uuid:id>/raw-dataset', methods=['GET'])
+def get_raw_dataset(id):
+    """
+    Récupère le dataset brut d'une compétition.
+    """
+    competition = Competition.query.get_or_404(id)
+    
+    if not competition.raw_dataset_path or not os.path.exists(competition.raw_dataset_path):
+        abort(404, description="Fichier dataset brut introuvable.")
+
+    return send_file(
+        competition.raw_dataset_path,
+        as_attachment=True,
+        download_name=f"raw_data_{id}.csv" # Nom suggéré au navigateur
+    )
+
+@competition_bp.route('/competitions/<uuid:id>/processed-dataset', methods=['GET'])
+def get_processed_dataset(id):
+    """
+    Récupère le dataset traité. 
+    Note: Cet endpoint devrait être réservé aux admins/organisateurs.
+    """
+    competition = Competition.query.get_or_404(id)
+    
+    if not competition.processed_dataset_path or not os.path.exists(competition.processed_dataset_path):
+        abort(404, description="Fichier dataset traité introuvable.")
+
+    return send_file(
+        competition.processed_dataset_path,
+        as_attachment=True,
+        download_name=f"processed_data_{id}.csv"
+    )
