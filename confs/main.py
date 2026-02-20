@@ -60,7 +60,7 @@ from celery import Celery
 celery = Celery(
         __name__, 
         broker=f"redis://{environ.get('CACHE_HOST')}:{environ.get('CACHE_PORT')}/0",
-        backend=f"redis://{environ.get('CACHE_HOST')}:{environ.get('CACHE_PORT')}/0"
+        backend=f"redis://:{environ.get('CACHE_PASSWORD')}@{environ.get('CACHE_HOST')}:{environ.get('CACHE_PORT')}/0"
         )
 
 app.extensions['celery'] = celery
