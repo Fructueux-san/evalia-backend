@@ -1,0 +1,20 @@
+Téléchargement dataset brut
+---
+summary: Télécharger le dataset brut
+description: Télécharger le dataset brute associé à une compétition
+tags:
+  - Competitions
+parameters:
+  - name: id
+    in: path
+    type: string
+    format: uuid
+    required: true
+    description: L'ID de la compétition
+responses:
+  200:
+    description: Le fichier dataset brut
+    schema:
+      type: file
+  404:
+    description: Compétition ou fichier non trouvé

@@ -66,6 +66,7 @@ def create_competition():
 
 
 @competition_bp.route('/competitions/<uuid:id>/raw-dataset', methods=['GET'])
+@swag_from("/app/docs/competition/download-raw-dataset.yaml")
 def get_raw_dataset(id):
     """
     Récupère le dataset brut d'une compétition.
@@ -82,6 +83,7 @@ def get_raw_dataset(id):
     )
 
 @competition_bp.route('/competitions/<uuid:id>/processed-dataset', methods=['GET'])
+@swag_from("/app/docs/competition/download-proceeded-dataset.yaml")
 def get_processed_dataset(id):
     """
     Récupère le dataset traité. 

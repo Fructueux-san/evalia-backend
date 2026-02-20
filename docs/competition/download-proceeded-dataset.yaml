@@ -1,0 +1,19 @@
+Téléchargement dataset traité (solution)
+---
+summary: Téléchargement de dataset d'une compet (traité).
+description: Télécharger le dataset traité associé à une compétition
+tags:
+  - Competitions
+parameters:
+  - name: id
+    in: path
+    type: string
+    format: uuid
+    required: true
+responses:
+  200:
+    description: Le fichier dataset brut
+    schema:
+      type: file
+  404:
+    description: Compétition ou fichier non trouvé
