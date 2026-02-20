@@ -36,9 +36,25 @@ services:
       - evalia-net
     volumes:
       - data:/data/postgres
+  
+  redis:
+    image: redis/redis-stack-server:latest
+    container_name: redis-evalia
+    hostname: redis-evalia
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --save 20 1 --loglevel warning --requirepass kjUsjcpc239nsBB --protected-mode no --loadmodule /opt/redis-stack/lib/redisearch.so --loadmodule /opt/redis-stack/lib/rejson.so
+    volumes:
+      - cache:/data
+    networks:
+      - evalia-net
+    
 
 
 volumes:
+  cache:
+    driver: local
   data:
     driver: local
 
