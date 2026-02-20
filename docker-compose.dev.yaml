@@ -20,6 +20,8 @@ services:
       - CACHE_PASSWORD=kjUsjcpc239nsBB
     volumes:
       - ./:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/uploads/:/var/uploads
     restart: always
     networks:
       - evalia-net
