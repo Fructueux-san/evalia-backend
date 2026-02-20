@@ -14,6 +14,8 @@ services:
       - DATABASE_PORT=5432
       - APP_SECRET_KEY=jiAjEyrhVgcT0h3yBs9wRnZyWjhiWczu4dOUZ5kTJkw=
       - JWT_SECRET_KEY=j0jcRbOdGHXhXr+98TPZLwS1TDPhQpYlbYndMssvMnE=
+      - CACHE_HOST=redis-evalia
+      - CACHE_PORT=6379
     volumes:
       - ./:/app
     restart: always

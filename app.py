@@ -1,8 +1,10 @@
+from os import environ
 from blueprints.user import user_bp
 from confs.main import app
 from flask_cors import CORS
 from flasgger import Swagger
 from confs.swagger import swagger_config, swagger_template
+
 
 CORS(app, resources={r"/*": {"origins": "*"}})
 

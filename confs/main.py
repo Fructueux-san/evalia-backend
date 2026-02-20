@@ -51,3 +51,17 @@ bcrypt = Bcrypt(app)
 # Configuration du logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+# Gestion de celery
+
+from celery import Celery
+
+celery = Celery(
+        __name__, 
+        broker=f"redis:{environ.get('CACHE_HOST')}:{environ.get('CACHE_PORT')}/0",
+        backend=f"redis:{environ.get('CACHE_HOST')}:{environ.get('CACHE_PORT')}/0"
+        )
+
+app.extensions['celery'] = celery
+
