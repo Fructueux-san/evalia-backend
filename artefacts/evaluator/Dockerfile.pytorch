@@ -1,0 +1,10 @@
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Installation de la version CPU de Torch pour gagner de l'espace
+RUN pip install --no-cache-dir pandas torch --index-url https://download.pytorch.org/whl/cpu
+
+COPY evaluate_pt.py /app/evaluate.py
+
+CMD ["python", "evaluate.py"]

@@ -1,0 +1,11 @@
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Installation des dépendances (h5py est souvent nécessaire pour les modèles .h5)
+RUN pip install --no-cache-dir pandas tensorflow h5py
+
+# On réutilise le script evaluate.py adapté (voir plus bas)
+COPY evaluate_tf.py /app/evaluate.py
+
+CMD ["python", "evaluate.py"]
