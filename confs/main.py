@@ -5,7 +5,7 @@ from flask_migrate import Migrate
 from os import environ
 from sqlalchemy.orm import DeclarativeBase
 
-from flask_jwt_extended import JWTManager, create_access_token
+from flask_jwt_extended import JWTManager,
 
 from confs.db import Database
 from flask_bcrypt import Bcrypt
@@ -29,6 +29,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATION'] = False
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
 
 
 _db_conn = Database()

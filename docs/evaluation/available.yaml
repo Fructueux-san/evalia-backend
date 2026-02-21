@@ -4,7 +4,6 @@ summary: Soumettre un modèle pour évaluation
 tags:
   - Submissions
   - Evaluation
-parameters:
 
 responses:
   401:
