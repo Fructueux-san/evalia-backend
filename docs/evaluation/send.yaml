@@ -1,0 +1,33 @@
+Soumission d'un modèle 
+---
+summary: Soumettre un modèle pour évaluation
+tags:
+  - Submissions
+parameters:
+  - name: comp_id
+    in: path
+    type: string
+    format: uuid
+    required: true
+  - name: user_id
+    in: formData
+    type: string
+    required: true
+  - name: model_type
+    in: formData
+    type: string
+    enum: ['sklearn', 'tensorflow', 'onnx', 'pytorch']
+    required: true
+    description: La librairie utilisée pour créer le modèle.
+  - name: model_file
+    in: formData
+    type: file
+    required: true
+    description: Le fichier du modèle (h5, pkl, pt, onnx)
+security:
+  - Bearer: []
+responses:
+  401:
+    description: Token manquant ou invalide
+  201:
+    description: Soumission enregistrée

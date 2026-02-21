@@ -49,7 +49,8 @@ swagger_config = {
         "apiKey": {
             "type": "apiKey",
             "name": "Authorization",
-            "in": "header"
+            "in": "header",
+            "description": "Ajoutez 'Bearer ' suivi de votre token JWT"
         }
     },
     "security": [
