@@ -13,7 +13,19 @@ Le build permet que les worker celery ne les build pas à chaque fois et fasse
 des installation coûteuses.
 Donc, c'est un run sur image à froid.
 
+Il faut le faire avec le script builder dans le dossier artefact
+(nb: c'est un script bash, donc si vous êtes sur windows, vous pouvez proposer 
+un script batch extension .bat).
 
+> Si vous avez la commande docker installé sur votre machine
+> et que c'est windows que vous utilisé vous pouvez faire un build manuel. 
+```bash
+docker build -t evaluator-sklearn:latest -f artefacts/evaluator/Dockerfile.sklearn artefacts/evaluator 
+docker build -t evaluator-tf:latest -f artefacts/evaluator/Dockerfile.tensorflow artefacts/evaluator
+docker build -t evaluator-pt:latest -f artefacts/evaluator/Dockerfile.pytorch artefacts/evaluator
+```
+
+---
 
 ## Pour lancer le projet 
 
