@@ -1,0 +1,13 @@
+Les types de soumissions prises en charges
+---
+summary: Soumettre un modèle pour évaluation
+tags:
+  - Submissions
+  - Evaluation
+parameters:
+
+responses:
+  401:
+    description: Token manquant ou invalide
+  201:
+    description: Soumission enregistrée

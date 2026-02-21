@@ -22,6 +22,7 @@ UPLOAD_FOLDER = '/app/uploads'
 
 
 @eval_bp.route("/eval/all-type", methods=["GET"])
+@swag_from("/app/docs/submission/available.yaml")
 def les_type_d_evaluation_existants():
     return jsonify({
         'sklearn': 'scikit_learn_evaluation',
