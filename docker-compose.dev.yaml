@@ -25,6 +25,9 @@ services:
     restart: always
     networks:
       - evalia-net
+    depends_on:
+      - database
+      - redis
 
 
   database:

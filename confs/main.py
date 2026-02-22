@@ -5,7 +5,7 @@ from flask_migrate import Migrate
 from os import environ
 from sqlalchemy.orm import DeclarativeBase
 
-from flask_jwt_extended import JWTManager,
+from flask_jwt_extended import JWTManager
 
 from confs.db import Database
 from flask_bcrypt import Bcrypt
