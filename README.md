@@ -12,6 +12,7 @@ Il faut faire le build des images d'isolation sur la machine hôte.
 Le build permet que les worker celery ne les build pas à chaque fois et fasse 
 des installation coûteuses.
 Donc, c'est un run sur image à froid.
+**Commande :** `./artefacts/builder.sh`
 
 Il faut le faire avec le script builder dans le dossier artefact
 (nb: c'est un script bash, donc si vous êtes sur windows, vous pouvez proposer 

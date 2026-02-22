@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # --- Configuration ---
-EVAL_DIR="evaluator"
+EVAL_DIR="artefacts/evaluator"
 IMAGE_PREFIX="evaluator"
 
 # Couleurs
