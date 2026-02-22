@@ -6,8 +6,8 @@ Il contient les paramètres de configuration de la doc.
 swagger_template = {
         "swagger": "2.0",
         "info": {
-            "title": "Gestion des notes",
-            "description": "Documentation d'API du backend de la gestion des notes.",
+            "title": "Backend de evalia",
+            "description": "Documentation d'API du backend de Evalia.",
             "contact": {
                 "name": "Developper",
                 "email": "stanislas.houeto@uac.bj",
@@ -15,8 +15,8 @@ swagger_template = {
             },
             "termsOfService": "Terms of services",
             "version": "1.0",
-            "host":"gestion-note",
-            "basePath":"http://localhost:9000",
+            "host":"backend-evalia",
+            "basePath":"http://localhost:8000",
             "license":{
                 "name":"License of API",
                 "url":"API license URL"
@@ -36,8 +36,8 @@ swagger_config = {
     ],
     "specs": [
         {
-            "endpoint": 'backend-note',
-            "route": '/backend-note.json',
+            "endpoint": 'backend-evalia',
+            "route": '/backend-evalia.json',
             "rule_filter": lambda rule: True,
             "model_filter": lambda tag: True,
         }

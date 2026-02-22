@@ -25,7 +25,7 @@ parameters:
     required: true
     description: Le fichier du modèle (h5, pkl, pt, onnx)
 security:
-  - Bearer: []
+  - apiKey: []
 responses:
   401:
     description: Token manquant ou invalide
