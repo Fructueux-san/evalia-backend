@@ -74,6 +74,11 @@ Référer vous au nom du service dans les fichier compose
 docker compose down backend
 ```
 
+## Accès à la base de données (possiblement utile en dev)
+```bash
+ docker exec -it database-evalia psql -U evalia evaliadb
+```
+
 
 ## Flower 
 L'app utilise celery avec redis pour les tâches async et queueing.
