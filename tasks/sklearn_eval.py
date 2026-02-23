@@ -38,8 +38,6 @@ def run_scikit_evaluation(submission_id):
         try:
             # 4. Lancement du conteneur Docker
             # On mappe les fichiers du disque vers l'intérieur du conteneur
-            print("Model path on disk", os.path.join(HOST_STORAGE, model_path_on_disk))
-            print("Data path on disk", os.path.join(HOST_STORAGE, truth_path_on_disk))
             container_output = client.containers.run(
                 image="evaluator-sklearn:latest",
                 working_dir="/app",
@@ -49,17 +47,17 @@ def run_scikit_evaluation(submission_id):
                     os.path.join(HOST_STORAGE, truth_path_on_disk): {'bind': '/app/truth.csv', 'mode': 'ro'}
                 },
                 network_disabled=True,
-                remove=False,
-                stderr=True
+                remove=True,
+                stderr=True,
+                mem_limit="128m", # On peut faire de sorte que on prend ça de la DB
+                nano_cpus=1000000000 # Limite 1 CPU (en nanosecondes)
             )
 
             # 5. Parsing des résultats renvoyés par le conteneur
-            # results = json.loads(container_output.decode('utf-8'))
-            results = container_output.decode('utf-8')
+            results = json.loads(container_output.decode('utf-8'))
             
             # Mise à jour des scores en base
-            # submission.score = results.get('accuracy')
-            submission.score = 0.9
+            submission.score = results.get('accuracy') if 'accuracy' in results else results.get("mse")
             submission.metrics_detail = results
             submission.status = "completed"
 

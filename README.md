@@ -93,3 +93,9 @@ Celery et redis sont utilisé pour récupérer des tâches à lancer en arrière
 et ensuite créer un environement de conteneur docker à la volé pour l'exécuton des 
 modèles en sandbox. 
 
+Il faut consulter la documentation suivante pour 
+pousser les configurations de docker : 
+https://docker-py.readthedocs.io/en/stable/containers.html
+
+
+

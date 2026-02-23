@@ -4,7 +4,7 @@ FROM python:3.9-slim
 WORKDIR /app
 
 # Installation des dépendances nécessaires
-RUN pip install --no-cache-dir pandas scikit-learn joblib
+RUN pip install --no-cache-dir pandas scikit-learn==1.4.1.post1 joblib
 
 # Copie du script d'évaluation
 COPY evaluate.py /app/evaluate.py
