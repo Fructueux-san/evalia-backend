@@ -48,9 +48,9 @@ def evaluation_model(comp_id):
         return jsonify({'error': 'Type de modèle invalide ou manquant'}), 400
     
     # Vérification extension
-    extension = file.filename.rsplit('.', 1)[1].lower()
-    if extension not in ALLOWED_MODELS:
-        return jsonify({"error": f"Extension .{extension} non supportée"}), 400
+    # extension = file.filename.rsplit('.', 1)[1].lower()
+    # if extension not in ALLOWED_MODELS:
+    #     return jsonify({"error": f"Extension .{extension} non supportée"}), 400
 
     # Sauvegarde physique
     save_dir = os.path.join(UPLOAD_FOLDER, 'submissions', str(comp_id), str(user_id))
@@ -86,7 +86,6 @@ def evaluation_model(comp_id):
     # ENVOI DE LA TACHE : On envoie l'ID (string) et non l'objet SQL
     task = celery.send_task(task_name, kwargs={
         'submission_id': str(new_submission.id),
-        'model_path': filepath
     })
 
     return jsonify({

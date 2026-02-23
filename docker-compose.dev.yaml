@@ -21,7 +21,8 @@ services:
     volumes:
       - ./:/app
       - /var/run/docker.sock:/var/run/docker.sock
-      - /var/uploads/:/var/uploads
+      - /var/evalia-data/uploads/:/app/uploads
+      - /var/evalia-data/storage/:/app/storage
     restart: always
     networks:
       - evalia-net

@@ -31,9 +31,9 @@ def evaluate():
         # On utilise 'weighted' pour gérer le multi-classe si nécessaire
         results = {
             "accuracy": float(accuracy_score(y_true, y_pred)),
-            "precision": float(precision_score(y_true, y_pred, average='weighted', zero_division=0)),
-            "recall": float(recall_score(y_true, y_pred, average='weighted', zero_division=0)),
-            "f1_score": float(f1_score(y_true, y_pred, average='weighted', zero_division=0)),
+            "precision": float(precision_score(y_true, y_pred, average='weighted', )),
+            "recall": float(recall_score(y_true, y_pred, average='weighted', )),
+            "f1_score": float(f1_score(y_true, y_pred, average='weighted', )),
             "status": "success"
         }
 
