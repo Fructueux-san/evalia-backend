@@ -57,14 +57,18 @@ def evaluation_model(comp_id):
     os.makedirs(save_dir, exist_ok=True)
     
     filename = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{secure_filename(file.filename)}"
+
     filepath = os.path.join(save_dir, filename)
     file.save(filepath)
 
-    # Création de l'entrée en base
+
+
+    db_save_path = os.path.join("uploads","submissions", str(comp_id), str(user_id))
+    db_file_path =  os.path.join(db_save_path, filename)
     new_submission = Submission(
         user_id=current_user_id,
         competition_id=comp_id,
-        model_path=filepath,
+        model_path=db_file_path,
         model_type=model_type, # On utilise le type formel
         status="pending"
     )

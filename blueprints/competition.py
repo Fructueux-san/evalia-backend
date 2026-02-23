@@ -79,7 +79,7 @@ def get_raw_dataset(id):
     return send_file(
         competition.raw_dataset_path,
         as_attachment=True,
-        download_name=f"raw_data_{id}.csv" # Nom suggéré au navigateur
+        download_name=f"raw_data_{id}.csv" 
     )
 
 @competition_bp.route('/competitions/<uuid:id>/processed-dataset', methods=['GET'])

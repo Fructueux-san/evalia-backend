@@ -18,6 +18,7 @@ services:
       - CACHE_HOST=redis-evalia
       - CACHE_PORT=6379
       - CACHE_PASSWORD=kjUsjcpc239nsBB
+      - APP_STORAGE=/var/evalia-data
     volumes:
       - ./:/app
       - /var/run/docker.sock:/var/run/docker.sock
