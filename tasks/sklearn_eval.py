@@ -43,7 +43,7 @@ def run_scikit_evaluation(submission_id):
             container_output = client.containers.run(
                 image="evaluator-sklearn:latest",
                 working_dir="/app",
-                command=["cat", "truth.csv"],
+                command=["python3", "evaluate.py"],
                 volumes={
                     os.path.join(HOST_STORAGE, model_path_on_disk): {'bind': '/app/model.pkl', 'mode': 'ro'},
                     os.path.join(HOST_STORAGE, truth_path_on_disk): {'bind': '/app/truth.csv', 'mode': 'ro'}
