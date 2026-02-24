@@ -39,6 +39,8 @@ def evaluation_model(comp_id):
         return jsonify({"error": "Fichier de modèle manquant"}), 400
 
     current_user_id = get_jwt_identity()
+
+    # TODO: Vérifier si le user a bel et bien intégré la compet
             
     file = request.files['model_file']
     user_id = request.form.get('user_id') 
