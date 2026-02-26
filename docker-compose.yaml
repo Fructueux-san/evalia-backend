@@ -71,3 +71,4 @@ volumes:
 networks:
   evalia-net:
     driver: bridge
+    external: true 

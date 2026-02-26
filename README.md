@@ -20,11 +20,11 @@ un script batch extension .bat).
 
 > Si vous avez la commande docker installé sur votre machine
 > et que c'est windows que vous utilisé vous pouvez faire un build manuel. 
-```bash
+>```bash
 docker build -t evaluator-sklearn:latest -f artefacts/evaluator/Dockerfile.sklearn artefacts/evaluator 
 docker build -t evaluator-tf:latest -f artefacts/evaluator/Dockerfile.tensorflow artefacts/evaluator
 docker build -t evaluator-pt:latest -f artefacts/evaluator/Dockerfile.pytorch artefacts/evaluator
-```
+>```
 
 ---
 
@@ -33,16 +33,20 @@ docker build -t evaluator-pt:latest -f artefacts/evaluator/Dockerfile.pytorch ar
 1. **En production**
 ```bash
 docker compose up -d 
-
 ```
+
 2. **En dev**
 ```bash
 docker compose -f docker-compose.dev.yaml up -d 
 ```
 
-... ensuite 
+NB: Si c'est pour la toute première fois, et que vous avez un problème du genre : 
+`network evalia-net declared as external, but could not be found` utilisez la commande 
+suivante pour régler le problème : `docker network create evalia-net`. 
+Pour supprimer `docker network rm evalia-net`
 
-### Les migration
+
+## Les migration
 
 ```bash
 docker exec -it backend-evalia flask db init # A faire une seule fois

@@ -67,24 +67,10 @@ def evaluation_model(comp_id):
         return jsonify({"error": "Fichier de modèle manquant"}), 400
 
     current_user_id = get_jwt_identity()
-
-    competition = Competition.query.get(comp_id)
-    if not competition:
-        return jsonify({"error": "Compétition introuvable"}), 404
-
-    # Vérifier que le user est bien inscrit et peut soumettre
-    from models.user import User
-    user = User.query.get(current_user_id)
-    if not user:
-        return jsonify({"error": "Utilisateur introuvable"}), 404
-
-    can_submit, reason = competition.can_user_submit(user)
-    if not can_submit:
-        return jsonify({"error": reason}), 403
-
-    # ── Validation du fichier ─────────────────────────────────
-    file       = request.files["model_file"]
-    model_type = request.form.get("model_type")
+            
+    file = request.files['model_file']
+    user_id = request.form.get('user_id') 
+    model_type = request.form.get('model_type') # 'sklearn', 'tensorflow', etc.
 
     if not model_type or model_type not in TASK_MAPPING:
         return jsonify({"error": f"Type de modèle invalide. Valeurs acceptées : {list(TASK_MAPPING.keys())}"}), 400
