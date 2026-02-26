@@ -6,6 +6,7 @@ if [ $ENV_EVALIA == "PROD" ]; then
   celery -A tasks.celery_app flower --port=5555 &
   celery -A tasks.celery_app worker --loglevel=INFO &
   python3 -m pytest -v tests/APITesting.py -o cache_dir=/tmp &&
+  gunicorn -w 1 -k gevent -b '0.0.0.0:9001' sse:app --timeout 0 --graceful-timeout 0 &
     gunicorn -w 5 -b '0.0.0.0:8000' 'app:app'   \
     --log-level debug \
     --access-logfile - \
@@ -19,6 +20,7 @@ else
   celery -A tasks.celery_app flower --port=5555 &
   celery -A tasks.celery_app worker --loglevel=INFO &
     python3 -m pytest -v tests/APITesting.py -o cache_dir=/tmp &&
+    python3 sse.py &
     python3 app.py
   wait
 fi
