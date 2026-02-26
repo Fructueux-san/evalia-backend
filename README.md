@@ -101,5 +101,45 @@ Il faut consulter la documentation suivante pour
 pousser les configurations de docker : 
 https://docker-py.readthedocs.io/en/stable/containers.html
 
+**Server-Side Event**
+Le SSE permet à travers un canal uni-directionnel (server vers client) 
+d'envoyer les notifications depuis un server vers un client. Il a été choisit 
+parce qu'il va être moins gourmant en ressource par rapport à socket-io qui est bidirectionnel. 
+
+Aussi, ces sockets etant des liaison permanente, le sse a été écrit dans une app 
+Flask séparé démarrant avec un nbre de workers précis (en prod) pour éviter de consommer 
+les worker gunicorn dans le processus app Flask principal. 
+
+Cette Architecture modulaire va permettre, ici dans notre cas d'envoyer des notifications 
+sse par le biais d'une fonction généric écrit, et se voit très utile depuis celery (vu que c'est asynchrone, 
+on pourra notifier le user quand une task donne un résulat donné). 
+
+Se référer à la documentation de flask-sse pour compréhension. 
+
+**Snippet de code pour le frontend**
+Le JS à écrire pour exploiter le sse ici va ressembler à ceci : 
+```js
+
+const source = new EventSource("/stream?channel=user:5c5c2c22-a8eb-4686-aea1-eae7fe372e00");
+
+// Cas générique : tous les messages sans type spécifique
+source.onmessage = (event) => {
+  console.log("Reçu via onmessage:", event.data);
+};
+
+// Cas ciblé : uniquement les events de type "message"
+source.addEventListener("message", (event) => {
+  console.log("Reçu via type=message:", event.data);
+});
+
+// Tu pourrais aussi envoyer un type différent, ex. "notification"
+source.addEventListener("notification", (event) => {
+  console.log("Notif:", event.data);
+});
+```
+
+L'uuid spécifié dans ce snippet est celui du user connecté, donc obtenu après son login. 
+
+
 
 
