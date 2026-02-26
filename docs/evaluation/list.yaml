@@ -1,0 +1,51 @@
+Mes soumissions pour une compétition
+---
+summary: Lister mes soumissions pour une compétition
+description: Retourne toutes les soumissions de l'utilisateur connecté pour une compétition donnée, triées par date décroissante.
+tags:
+  - Submissions
+security:
+  - apiKey: []
+parameters:
+  - name: comp_id
+    in: path
+    type: string
+    format: uuid
+    required: true
+    description: UUID de la compétition
+responses:
+  200:
+    description: Liste des soumissions
+    schema:
+      properties:
+        competition_id:
+          type: string
+          format: uuid
+        competition:
+          type: string
+          description: Titre de la compétition
+        count:
+          type: integer
+        submissions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              model_type:
+                type: string
+              status:
+                type: string
+                enum: [pending, processing, completed, failed]
+              score:
+                type: number
+                format: float
+              created_at:
+                type: string
+                format: date-time
+  401:
+    description: Token JWT manquant ou invalide
+  404:
+    description: Compétition introuvable

@@ -12,7 +12,7 @@ produce:
 
 # A décommenter si le auth jwt est déjà activé:
 # security:
-#   - apiKey: []
+  # - apiKey: []
 
 parameters:
   - name: username

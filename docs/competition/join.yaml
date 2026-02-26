@@ -1,0 +1,36 @@
+Rejoindre une compétition
+---
+summary: S'inscrire à une compétition
+description: Permet à un utilisateur connecté de rejoindre une compétition. La compétition doit être en statut 'upcoming' ou 'active'.
+tags:
+  - Competitions
+security:
+  - apiKey: []
+parameters:
+  - name: id
+    in: path
+    type: string
+    format: uuid
+    required: true
+    description: UUID de la compétition
+responses:
+  200:
+    description: Inscription réussie
+    schema:
+      properties:
+        message:
+          type: string
+          example: Inscription réussie
+        competition_id:
+          type: string
+          format: uuid
+        competition:
+          type: string
+  401:
+    description: Token JWT manquant ou invalide
+  403:
+    description: La compétition n'accepte pas de nouvelles inscriptions
+  404:
+    description: Compétition ou utilisateur introuvable
+  409:
+    description: Déjà inscrit à cette compétition

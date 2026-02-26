@@ -1,51 +1,87 @@
 Créer une nouvelle compétition
 ---
 summary: Formulaire de création d'une compétition
-description: Création d'une nouvelle compétition avec upload de datasets. L'endpoint attend un formulaire multipart contenant les métadonnées et les fichiers CSV/JSON.
+description: Crée une nouvelle compétition. L'endpoint attend un formulaire multipart avec les métadonnées. Les fichiers de datasets sont optionnels à la création. JWT requis.
 tags:
   - Competitions
+security:
+  - apiKey: []
 parameters:
-  - name: name
+  - name: slug
     in: formData
     type: string
     required: true
-    description: Le nom de la compétition d'IA.
+    description: "Identifiant URL unique (ex: ma-competition-2024)"
+  - name: title
+    in: formData
+    type: string
+    required: true
+    description: Titre de la compétition
   - name: description
     in: formData
     type: string
-    required: false
-    description: Une description détaillée des objectifs.
-  - name: creator_id
+    required: true
+    description: Description détaillée (markdown)
+  - name: task_type
     in: formData
     type: string
-    format: uuid
     required: true
-    description: L'UUID de l'utilisateur créateur.
+    enum: [classification, regression, clustering, nlp, computer_vision]
+  - name: primary_metric
+    in: formData
+    type: string
+    required: true
+    enum: [accuracy, f1_score, precision, recall, auc_roc, log_loss, rmse, mae, r2, mape]
+  - name: start_date
+    in: formData
+    type: string
+    format: date-time
+    required: true
+    description: Date d'ouverture des soumissions (ISO 8601)
+  - name: end_date
+    in: formData
+    type: string
+    format: date-time
+    required: true
+    description: Date de clôture des soumissions (ISO 8601)
   - name: raw_dataset
     in: formData
     type: file
-    required: true
-    description: Le fichier dataset brut (ex CSV) que les participants devront traiter.
+    required: false
+    description: Dataset d'entraînement brut (CSV, XLSX, JSON, Parquet)
   - name: processed_dataset
     in: formData
     type: file
-    required: true
-    description: Le fichier de vérité terrain (labels) utilisé pour le calcul du score.
+    required: false
+    description: Dataset de vérité terrain — JAMAIS exposé publiquement
+  - name: max_submissions_per_day
+    in: formData
+    type: integer
+    required: false
+    default: 10
+  - name: max_submissions_total
+    in: formData
+    type: integer
+    required: false
+    default: 50
 responses:
   201:
-    description: Compétition créée avec succès.
+    description: Compétition créée avec succès
     schema:
       properties:
+        message:
+          type: string
+          example: Compétition créée avec succès
         id:
           type: string
           format: uuid
-        message:
+        slug:
           type: string
-          example: "Compétition créée"
   400:
-    description: Erreur de validation (fichiers manquants ou format invalide).
-    schema:
-      properties:
-        error:
-          type: string
-          example: "Deux fichiers (raw et processed) sont requis"
+    description: Données invalides ou manquantes
+  401:
+    description: Token JWT manquant ou invalide
+  409:
+    description: Ce slug est déjà pris
+  500:
+    description: Erreur serveur

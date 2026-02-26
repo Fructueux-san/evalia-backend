@@ -1,0 +1,40 @@
+Détail d'une compétition
+---
+summary: Récupérer les détails publics d'une compétition
+description: Retourne toutes les informations publiques d'une compétition (hors données de test).
+tags:
+  - Competitions
+parameters:
+  - name: id
+    in: path
+    type: string
+    format: uuid
+    required: true
+    description: UUID de la compétition
+responses:
+  200:
+    description: Détails de la compétition
+    schema:
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+          enum: [draft, upcoming, active, closed, finished, archived]
+        task_type:
+          type: string
+        description:
+          type: string
+        calendar:
+          type: object
+        metrics:
+          type: object
+        stats:
+          type: object
+  404:
+    description: Compétition introuvable
