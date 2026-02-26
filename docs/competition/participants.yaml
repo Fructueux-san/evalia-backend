@@ -1,0 +1,40 @@
+Liste des participants d'une compétition
+---
+summary: Récupérer la liste des participants d'une compétition
+description: Retourne tous les utilisateurs inscrits à une compétition donnée.
+tags:
+  - Competitions
+parameters:
+  - name: id
+    in: path
+    type: string
+    format: uuid
+    required: true
+    description: UUID de la compétition
+responses:
+  200:
+    description: Liste des participants
+    schema:
+      properties:
+        competition_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        count:
+          type: integer
+          description: Nombre de participants
+        participants:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              username:
+                type: string
+              name:
+                type: string
+  404:
+    description: Compétition introuvable

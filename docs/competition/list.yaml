@@ -1,0 +1,52 @@
+Liste des compétitions publiques
+---
+summary: Lister les compétitions accessibles au public
+description: Retourne toutes les compétitions dont le statut n'est pas DRAFT. Supporte la pagination et le filtrage par statut et type de tâche.
+tags:
+  - Competitions
+parameters:
+  - name: status
+    in: query
+    type: string
+    required: false
+    description: Filtrer par statut (upcoming, active, closed, finished, archived)
+    enum: [upcoming, active, closed, finished, archived]
+  - name: task_type
+    in: query
+    type: string
+    required: false
+    description: Filtrer par type de tâche ML
+    enum: [classification, regression, clustering, nlp, computer_vision]
+  - name: page
+    in: query
+    type: integer
+    required: false
+    default: 1
+  - name: per_page
+    in: query
+    type: integer
+    required: false
+    default: 20
+    description: Nombre de résultats par page (max 100)
+responses:
+  200:
+    description: Liste retournée avec succès
+    schema:
+      properties:
+        competitions:
+          type: array
+          items:
+            type: object
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+            per_page:
+              type: integer
+            total:
+              type: integer
+            pages:
+              type: integer
+  400:
+    description: Paramètre de filtre invalide

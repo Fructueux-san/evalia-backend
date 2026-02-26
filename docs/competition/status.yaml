@@ -1,0 +1,44 @@
+Changer le statut d'une compétition
+---
+summary: Mettre à jour le statut d'une compétition (admin uniquement)
+description: Permet à un administrateur de changer manuellement le statut d'une compétition.
+tags:
+  - Competitions
+security:
+  - apiKey: []
+parameters:
+  - name: id
+    in: path
+    type: string
+    format: uuid
+    required: true
+    description: UUID de la compétition
+  - name: body
+    in: body
+    required: true
+    schema:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [draft, upcoming, active, closed, finished, archived]
+          description: Nouveau statut à appliquer
+responses:
+  200:
+    description: Statut mis à jour
+    schema:
+      properties:
+        message:
+          type: string
+        status:
+          type: string
+  400:
+    description: Statut invalide ou manquant
+  401:
+    description: Token JWT manquant ou invalide
+  403:
+    description: Droits administrateur requis
+  404:
+    description: Compétition introuvable

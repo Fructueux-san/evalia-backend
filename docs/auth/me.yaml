@@ -1,0 +1,36 @@
+Profil de l'utilisateur connecté
+---
+summary: Retourner le profil de l'utilisateur JWT connecté
+description: Retourne les informations complètes de l'utilisateur identifié par le token JWT fourni.
+tags:
+  - Auth
+security:
+  - apiKey: []
+responses:
+  200:
+    description: Profil retourné avec succès
+    schema:
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+          example: blinkman678
+        name:
+          type: string
+          example: John DOE
+        email:
+          type: string
+          format: email
+        is_admin:
+          type: boolean
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+  401:
+    description: Token JWT manquant ou invalide
+  404:
+    description: Utilisateur introuvable

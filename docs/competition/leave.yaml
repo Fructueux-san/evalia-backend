@@ -1,0 +1,27 @@
+Quitter une compétition
+---
+summary: Se désinscrire d'une compétition
+description: Permet à un utilisateur connecté de quitter une compétition à laquelle il est inscrit.
+tags:
+  - Competitions
+security:
+  - apiKey: []
+parameters:
+  - name: id
+    in: path
+    type: string
+    format: uuid
+    required: true
+    description: UUID de la compétition
+responses:
+  200:
+    description: Désinscription réussie
+    schema:
+      properties:
+        message:
+          type: string
+          example: Désinscription réussie
+  401:
+    description: Token JWT manquant ou invalide
+  404:
+    description: Compétition introuvable ou utilisateur non inscrit
