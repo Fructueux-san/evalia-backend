@@ -5,11 +5,11 @@ from flask_cors import CORS
 
 
 app = Flask(__name__)
-CORS(app, resources={r"*": {"origins": "*"}})
 
 app.config["REDIS_URL"] = url_string_sse
 app.register_blueprint(sse, url_prefix="/stream")
 
+CORS(app, resources={r"/stream/*": {"origins": "*"}})
 
 @app.post("/notify")
 def notify():

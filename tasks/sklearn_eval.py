@@ -61,7 +61,7 @@ def run_scikit_evaluation(submission_id):
             submission.score = results.get('accuracy') if 'accuracy' in results else results.get("mse")
             submission.metrics_detail = results
             submission.status = "completed"
-            send_event_to_client(submission.user_id, data={"raw": container_output, 'result': results}, msg_type=submission.status , enabled=True)
+            send_event_to_client(submission.user_id, data={"raw": str(container_output), 'result': results}, msg_type=submission.status , enabled=True)
 
         except Exception as e:
             submission.status = "failed"

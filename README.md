@@ -120,7 +120,7 @@ Se référer à la documentation de flask-sse pour compréhension.
 Le JS à écrire pour exploiter le sse ici va ressembler à ceci : 
 ```js
 
-const source = new EventSource("/stream?channel=user:5c5c2c22-a8eb-4686-aea1-eae7fe372e00");
+const source = new EventSource("/stream?channel=user:037b38e4-9df6-4b0d-9b1c-1832941257c5");
 
 // Cas générique : tous les messages sans type spécifique
 source.onmessage = (event) => {

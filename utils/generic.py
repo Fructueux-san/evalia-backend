@@ -23,4 +23,8 @@ def send_event_to_client(user_id, data: dict, msg_type: str, enabled: bool):
                 response = requests.post(f"{url}", json=data)
                 return response
             except Exception as e: 
+                print("--------------ERROR-----------")
+                print(data)
+                print(e)
                 logger.error("Impossible d'envoyer de notification, l'application SSE est peut-être en mode test ou inaccessible.")
+                print("--------------END ERROR-----------")

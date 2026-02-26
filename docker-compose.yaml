@@ -23,6 +23,7 @@ services:
       - REDIS_PASSWORD=kjUsjcpc239nsBB
       - REDIS_PORT=6379
       - SSE_CACHE_DB=12
+      - SSE_PORT=8001
     volumes:
       - ./:/app:ro
       - /var/run/docker.sock:/var/run/docker.sock
