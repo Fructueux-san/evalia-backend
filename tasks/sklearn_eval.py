@@ -5,6 +5,7 @@ from celery import shared_task
 from models.submission import Submission
 from models.competition import Competition
 from confs.main import db, app
+from utils.generic import send_event_to_client
 
 client = docker.from_env()
 
@@ -60,10 +61,13 @@ def run_scikit_evaluation(submission_id):
             submission.score = results.get('accuracy') if 'accuracy' in results else results.get("mse")
             submission.metrics_detail = results
             submission.status = "completed"
+            send_event_to_client(submission.user_id, data={"raw": container_output, 'result': results}, msg_type=submission.status , enabled=True)
 
         except Exception as e:
             submission.status = "failed"
             submission.metrics_detail = {"error": str(e)}
+            send_event_to_client(submission.user_id, data={'result': 'Model cannot be executed', "error": str(e)}, msg_type=submission.status , enabled=True)
+
         
         db.session.commit()
         return f"Success for submission {submission_id}"
