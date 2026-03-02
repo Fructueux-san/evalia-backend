@@ -91,6 +91,46 @@ Il est accessible sur `http://localhost:5555` après le lancement du backend.
 Veuillez à ce que tous les services du docker compose soient lancés. 
 
 
+## Tests 
+
+Les tests d'API (`tests/APITesting.py`) sont lancés automatiquement **avant** le démarrage 
+du serveur Flask (voir `init.sh`). Le serveur ne démarre que si tous les tests passent.
+
+### Lancer les tests manuellement
+```bash
+# Dans le conteneur Docker :
+docker exec -it backend-evalia python3 -m pytest -v tests/APITesting.py -o cache_dir=/tmp
+```
+
+Les tests sont **auto-suffisants** : ils créent leurs propres données (utilisateurs uniques) 
+et les nettoient automatiquement. Aucune donnée préexistante n'est nécessaire.
+
+Voir `tests/Readme.md` pour le détail des 18 tests couverts.
+
+
+## Troubleshooting
+
+### Le backend ne démarre pas (localhost:8000 ne répond pas)
+
+1. **Vérifier les logs** : `docker logs backend-evalia -f`
+2. **Si les tests échouent** : les logs montreront les tests pytest qui bloquent le démarrage.
+   Le serveur ne se lance que si tous les tests passent.
+3. **Si la DB n'est pas prête** : `init.sh` attend automatiquement que PostgreSQL soit accessible 
+   (max 30 tentatives, 2s entre chaque). Vérifier que le conteneur `database-evalia` est running.
+4. **Réseau Docker manquant** : si vous voyez `network evalia-net declared as external, but could not be found`, 
+   lancez : `docker network create evalia-net`
+5. **Reconstruire les images** : `docker compose -f docker-compose.dev.yaml up -d --build`
+
+### Ports utilisés
+| Port | Service |
+|------|---------|
+| 8000 | API Flask (principal) |
+| 8001 | SSE (Server-Side Events) |
+| 5555 | Flower (monitoring Celery) |
+| 5433 | PostgreSQL (exposé en dev) |
+| 6379 | Redis |
+
+
 # Architecture 
 Celery et redis sont utilisé pour récupérer des tâches à lancer en arrière plan
 (comme l'exécution des modèles dans notre cas) ; 
