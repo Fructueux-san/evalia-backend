@@ -96,8 +96,8 @@ class Competition(db.Model):
     id     = db.Column(db.UUID(as_uuid=True), primary_key=True, default=uuid4)
     slug   = db.Column(db.String(120), unique=True, nullable=False, index=True)  # URL-friendly
     title  = db.Column(db.String(255), nullable=False)
-    status = db.Column(db.Enum(CompetitionStatus), nullable=False, default=CompetitionStatus.DRAFT, index=True)
-    task_type  = db.Column(db.Enum(TaskType), nullable=False)
+    status = db.Column(db.Enum(CompetitionStatus, native_enum=False), nullable=False, default=CompetitionStatus.DRAFT, index=True)
+    task_type  = db.Column(db.Enum(TaskType, native_enum=False), nullable=False)
     created_by = db.Column(db.UUID(as_uuid=True), db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -119,7 +119,7 @@ class Competition(db.Model):
     results_date       = db.Column(db.DateTime, nullable=True)    # Publication résultats
 
     # ── Configuration métriques ───────────────
-    primary_metric    = db.Column(db.Enum(MetricName), nullable=False)
+    primary_metric    = db.Column(db.Enum(MetricName, native_enum=False), nullable=False)
     secondary_metrics = db.Column(JSON, nullable=True)   # ["f1_score", "auc_roc"]
     evaluation_config = db.Column(JSON, nullable=True)   # Config avancée
 
