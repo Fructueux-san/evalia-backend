@@ -3,7 +3,7 @@
 # ──────────────────────────────────────────────────────────────
 #  Attendre que la base PostgreSQL soit prête
 # ──────────────────────────────────────────────────────────────
-echo "⏳ En attente de la base de données PostgreSQL..."
+echo " En attente de la base de données PostgreSQL..."
 MAX_RETRIES=30
 RETRY_COUNT=0
 until python3 -c "
@@ -23,19 +23,33 @@ except Exception:
 " 2>/dev/null; do
   RETRY_COUNT=$((RETRY_COUNT + 1))
   if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
-    echo "❌ Impossible de se connecter à la DB après $MAX_RETRIES tentatives."
+    echo " Impossible de se connecter à la DB après $MAX_RETRIES tentatives."
     exit 1
   fi
   echo "  ↻ Tentative $RETRY_COUNT/$MAX_RETRIES — nouvelle tentative dans 2s..."
   sleep 2
 done
-echo "✅ Base de données prête !"
+echo " Base de données prête !"
 
 # ──────────────────────────────────────────────────────────────
 #  Appliquer les migrations
 # ──────────────────────────────────────────────────────────────
-echo "📦 Application des migrations..."
-flask db upgrade 2>/dev/null || echo "⚠️  Pas de migrations à appliquer (ou dossier migrations absent)"
+echo " Application des migrations..."
+flask db upgrade
+if [ $? -ne 0 ]; then
+  echo " Échec de l'application des migrations. Arrêt."
+  exit 1
+fi
+echo " Migrations appliquées !"
+
+# ──────────────────────────────────────────────────────────────
+#  Peupler la base de données (seeds)
+# ──────────────────────────────────────────────────────────────
+echo " Exécution des seeds..."
+python3 seeds.py
+if [ $? -ne 0 ]; then
+  echo " Échec des seeds (non bloquant)"
+fi
 
 # ──────────────────────────────────────────────────────────────
 #  Lancement des services

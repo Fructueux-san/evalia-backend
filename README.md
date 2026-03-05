@@ -130,6 +130,16 @@ Voir `tests/Readme.md` pour le détail des 18 tests couverts.
 | 5433 | PostgreSQL (exposé en dev) |
 | 6379 | Redis |
 
+# Pour prendre en compte les seed avant lancement
+
+# 1. Appliquer les migrations
+docker exec -it backend-evalia flask db upgrade
+
+# 2. Lancer les seeds
+docker exec -it backend-evalia python3 seeds.py
+
+# 3. Lancer les tests
+docker exec -it backend-evalia python3 -m pytest -v tests/APITesting.py -o cache_dir=/tmp
 
 # Architecture 
 Celery et redis sont utilisé pour récupérer des tâches à lancer en arrière plan
