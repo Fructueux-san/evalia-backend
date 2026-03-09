@@ -1,0 +1,87 @@
+Tableau de bord de l'utilisateur connecté
+---
+summary: Retourner les statistiques du dashboard de l'utilisateur JWT connecté
+description: |
+  Retourne un résumé complet pour le tableau de bord :
+  nombre de compétitions rejointes / créées / actives / terminées,
+  nombre total de soumissions, meilleure soumission,
+  et les 5 dernières compétitions et soumissions récentes.
+tags:
+  - Auth
+security:
+  - apiKey: []
+responses:
+  200:
+    description: Dashboard retourné avec succès
+    schema:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            username:
+              type: string
+            name:
+              type: string
+            email:
+              type: string
+              format: email
+        stats:
+          type: object
+          properties:
+            competitions_joined:
+              type: integer
+              example: 3
+            competitions_created:
+              type: integer
+              example: 1
+            competitions_active:
+              type: integer
+              example: 2
+            competitions_finished:
+              type: integer
+              example: 1
+            total_submissions:
+              type: integer
+              example: 12
+            best_submission:
+              type: object
+              nullable: true
+              description: Meilleure soumission (score le plus élevé) ou null
+        recent_competitions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              title:
+                type: string
+              slug:
+                type: string
+              status:
+                type: string
+        recent_submissions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              score:
+                type: number
+                nullable: true
+              status:
+                type: string
+              created_at:
+                type: string
+                format: date-time
+  401:
+    description: Token JWT manquant ou invalide
+  404:
+    description: Utilisateur introuvable

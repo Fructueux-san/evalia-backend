@@ -6,6 +6,7 @@ Routes :
   POST  /api/auth/register          — Créer un compte
   POST  /api/auth/login             — Se connecter (retourne un token JWT)
   GET   /api/auth/me                — Profil de l'utilisateur connecté (JWT requis)
+  GET   /api/auth/dashboard         — Tableau de bord de l'utilisateur connecté (JWT requis)
   GET   /api/auth/user-info/<username> — Informations publiques d'un utilisateur
 """
 
@@ -152,4 +153,85 @@ def me():
         "is_admin":   user.is_admin,
         "is_active":  user.is_active,
         "created_at": user.created_at.isoformat() if user.created_at else None,
+    }), 200
+
+
+# ──────────────────────────────────────────────────────────────
+#  GET /api/auth/dashboard
+# ──────────────────────────────────────────────────────────────
+
+@user_bp.route("/auth/dashboard", methods=["GET"])
+@swag_from("/app/docs/auth/dashboard.yaml")
+@jwt_required()
+def dashboard():
+    """Retourne les statistiques du tableau de bord de l'utilisateur connecté."""
+    from models.competition import Competition, CompetitionStatus
+    from models.submission import Submission
+
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+
+    if not user:
+        return jsonify({"message": "Utilisateur introuvable"}), 404
+
+    # ── Statistiques compétitions ─────────────────────────────
+    joined_competitions = user.participations_list
+    created_competitions = user.created_competitions
+
+    competitions_active = sum(
+        1 for c in joined_competitions if c.status == CompetitionStatus.ACTIVE
+    )
+    competitions_finished = sum(
+        1 for c in joined_competitions if c.status == CompetitionStatus.FINISHED
+    )
+
+    # ── Statistiques soumissions ──────────────────────────────
+    total_submissions = Submission.query.filter_by(user_id=user.id).count()
+
+    best_submission = (
+        Submission.query
+        .filter_by(user_id=user.id, status="completed")
+        .filter(Submission.score.isnot(None))
+        .order_by(Submission.score.desc())
+        .first()
+    )
+
+    # ── Activité récente ──────────────────────────────────────
+    recent_competitions = sorted(
+        joined_competitions, key=lambda c: c.created_at or "", reverse=True
+    )[:5]
+
+    recent_submissions = (
+        Submission.query
+        .filter_by(user_id=user.id)
+        .order_by(Submission.created_at.desc())
+        .limit(5)
+        .all()
+    )
+
+    return jsonify({
+        "user": {
+            "id":       str(user.id),
+            "username": user.username,
+            "name":     user.name,
+            "email":    user.email,
+        },
+        "stats": {
+            "competitions_joined":   len(joined_competitions),
+            "competitions_created":  len(created_competitions),
+            "competitions_active":   competitions_active,
+            "competitions_finished": competitions_finished,
+            "total_submissions":     total_submissions,
+            "best_submission":       best_submission.to_dict() if best_submission else None,
+        },
+        "recent_competitions": [
+            {
+                "id":     str(c.id),
+                "title":  c.title,
+                "slug":   c.slug,
+                "status": c.status.value,
+            }
+            for c in recent_competitions
+        ],
+        "recent_submissions": [s.to_dict() for s in recent_submissions],
     }), 200
