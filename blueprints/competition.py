@@ -14,6 +14,7 @@ Routes participations :
   POST   /api/competitions/<id>/join            — Rejoindre une compétition (JWT requis)
   DELETE /api/competitions/<id>/leave           — Quitter une compétition (JWT requis)
   GET    /api/competitions/<id>/participants    — Liste des participants
+  GET    /api/competitions/my                   — Compétitions du user connecté (JWT requis)
 """
 
 import os
@@ -26,7 +27,7 @@ from flasgger import swag_from
 
 from confs.main import db, logger
 from middlewares.auth import admin_required
-from models.competition import Competition, CompetitionStatus
+from models.competition import Competition, CompetitionStatus, participations
 from models.user import User
 from validators.competition import CreateCompetitionSchema
 from utils.generic import allowed_file
@@ -171,6 +172,62 @@ def list_competitions():
 
     query = Competition.query.filter(
         Competition.status != CompetitionStatus.DRAFT
+    )
+
+    if status_filter:
+        try:
+            query = query.filter(Competition.status == CompetitionStatus(status_filter))
+        except ValueError:
+            return jsonify({"message": f"Statut '{status_filter}' invalide"}), 400
+
+    if task_type_filter:
+        from models.competition import TaskType
+        try:
+            query = query.filter(Competition.task_type == TaskType(task_type_filter))
+        except ValueError:
+            return jsonify({"message": f"Type de tâche '{task_type_filter}' invalide"}), 400
+
+    query = query.order_by(Competition.created_at.desc())
+    paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    return jsonify({
+        "competitions": [c.to_public_dict() for c in paginated.items],
+        "pagination": {
+            "page":       paginated.page,
+            "per_page":   paginated.per_page,
+            "total":      paginated.total,
+            "pages":      paginated.pages,
+            "has_next":   paginated.has_next,
+            "has_prev":   paginated.has_prev,
+        }
+    }), 200
+
+
+# ──────────────────────────────────────────────────────────────
+#  GET /api/competitions/my
+# ──────────────────────────────────────────────────────────────
+
+@competition_bp.route("/competitions/my", methods=["GET"])
+@swag_from("/app/docs/competition/my.yaml")
+@jwt_required()
+def get_my_competitions():
+    """Retourne la liste des compétitions auxquelles l'utilisateur connecté participe."""
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+
+    if not user:
+        return jsonify({"message": "Utilisateur introuvable"}), 404
+
+    # Filtres optionnels via query params
+    status_filter    = request.args.get("status")
+    task_type_filter = request.args.get("task_type")
+    page             = request.args.get("page", 1, type=int)
+    per_page         = min(request.args.get("per_page", 20, type=int), 100)
+
+    query = Competition.query.join(
+        participations
+    ).filter(
+        participations.c.user_id == user_id
     )
 
     if status_filter:

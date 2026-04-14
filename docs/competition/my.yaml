@@ -1,0 +1,68 @@
+summary: "Get user's competitions"
+description: "Returns the list of competitions the authenticated user participates in."
+tags:
+  - competitions
+security:
+  - bearerAuth: []
+parameters:
+  - name: status
+    in: query
+    description: "Filter by competition status"
+    required: false
+    schema:
+      type: string
+      enum: [upcoming, active, closed, finished, archived]
+  - name: task_type
+    in: query
+    description: "Filter by task type"
+    required: false
+    schema:
+      type: string
+      enum: [classification, regression, clustering, nlp, computer_vision]
+  - name: page
+    in: query
+    description: "Page number"
+    required: false
+    schema:
+      type: integer
+      default: 1
+  - name: per_page
+    in: query
+    description: "Items per page"
+    required: false
+    schema:
+      type: integer
+      default: 20
+responses:
+  200:
+    description: "List of user's competitions"
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            competitions:
+              type: array
+              items:
+                $ref: '#/components/schemas/Competition'
+            pagination:
+              type: object
+              properties:
+                page:
+                  type: integer
+                per_page:
+                  type: integer
+                total:
+                  type: integer
+                pages:
+                  type: integer
+                has_next:
+                  type: boolean
+                has_prev:
+                  type: boolean
+  404:
+    description: "User not found"
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Error'
