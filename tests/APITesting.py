@@ -1,25 +1,88 @@
 """
-Les test d'API sont écrits dans ce fichier
-en utilisant la librairie unittests
+Tests d'API — tests auto-suffisants avec unittest.
+Chaque test crée ses propres données et les nettoie après.
+
+Exécution :
+    python3 -m pytest -v tests/APITesting.py -o cache_dir=/tmp
 """
 
 import logging
+import unittest
+import os
+import uuid
+
 from flask import json
 from app import app
-import unittest
-import os 
+from confs.main import db, bcrypt
+
+
+# ──────────────────────────────────────────────────────────────
+#  Données de test (uniques à chaque exécution)
+# ──────────────────────────────────────────────────────────────
+
+_UNIQUE = uuid.uuid4().hex[:8]
+
+TEST_USER = {
+    "username": f"testuser_{_UNIQUE}",
+    "email": f"testuser_{_UNIQUE}@evalia-test.local",
+    "password": "TestPass123!",
+    "name": "Test User"
+}
+
+TEST_USER_2 = {
+    "username": f"testuser2_{_UNIQUE}",
+    "email": f"testuser2_{_UNIQUE}@evalia-test.local",
+    "password": "TestPass456!",
+    "name": "Test User 2"
+}
+
 
 class APITesting(unittest.TestCase):
+    """Tests d'API auto-suffisants pour le backend Evalia."""
+
     _token = ""
-    _base_header = {'Content-type': 'application/json', 'accept': 'application/json'}
+    _user_id = ""
+    _base_header = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    }
+    _created_user_ids = []
 
-    def setUp(self) -> None:
-        app.testing = True
-        app.config['TESTING'] = True
-
+    # ──────────────────────────────────────────────────────────
+    #  Setup / Teardown
+    # ──────────────────────────────────────────────────────────
 
     @classmethod
-    def setUpClass(self):
+    def setUpClass(cls):
+        """Préparer l'environnement de test."""
+        app.testing = True
+        app.config['TESTING'] = True
+        # Ne pas propager les exceptions — on veut des réponses HTTP (500, etc.)
+        app.config['PROPAGATE_EXCEPTIONS'] = False
+        app.config['TRAP_HTTP_EXCEPTIONS'] = False
+        os.environ['TESTING'] = 'test'
+        cls.client = app.test_client()
+        cls._created_user_ids = []
+
+        # S'assurer que les tables existent
+        with app.app_context():
+            db.create_all()
+
+    @classmethod
+    def tearDownClass(cls):
+        """Nettoyer les données de test créées."""
+        os.environ.pop("TESTING", None)
+
+        # Supprimer les utilisateurs créés pendant les tests
+        with app.app_context():
+            from models.user import User
+            for uid in cls._created_user_ids:
+                user = db.session.get(User, uid)
+                if user:
+                    db.session.delete(user)
+            db.session.commit()
+
+    def setUp(self):
         app.testing = True
         app.config['TESTING'] = True
         os.environ['TESTING'] = 'test'
