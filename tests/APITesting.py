@@ -38,3 +38,10 @@ class APITesting(unittest.TestCase):
             logging.info(response.get_data(as_text=True))
         self.assertEqual(response.status_code, 200) # Ou bien assertIn
 
+    def test__recuperer_le_dashboard_sans_token_doit_echouer(self):
+        response = self.client.get(
+            "/api/dashboard/me",
+            headers=self._base_header
+        )
+        self.assertEqual(response.status_code, 401)
+

@@ -1,0 +1,52 @@
+get:
+  tags:
+    - Dashboard
+  summary: Retourne les informations du dashboard de l'utilisateur connecté
+  description: |
+    Regroupe les informations de profil, les compétitions rejointes, 
+    les compétitions créées et des statistiques globales.
+    Requis : Token JWT valide dans le header Authorization.
+  security:
+    - Bearer: []
+  responses:
+    200:
+      description: Dashboard récupéré avec succès
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              user:
+                type: object
+                properties:
+                  id: {type: string, format: uuid}
+                  username: {type: string}
+                  name: {type: string}
+                  email: {type: string}
+                  is_admin: {type: boolean}
+                  created_at: {type: string, format: date-time}
+              competitions:
+                type: object
+                properties:
+                  joined:
+                    type: object
+                    properties:
+                      count: {type: integer}
+                      list:
+                        type: array
+                        items: { $ref: '#/components/schemas/CompetitionPublic' }
+                  created:
+                    type: object
+                    properties:
+                      count: {type: integer}
+                      list:
+                        type: array
+                        items: { $ref: '#/components/schemas/CompetitionPublic' }
+              stats:
+                type: object
+                properties:
+                  total_submissions: {type: integer}
+    401:
+      description: Non authentifié (JWT manquant ou invalide)
+    404:
+      description: Utilisateur introuvable

@@ -6,6 +6,7 @@ from flasgger import Swagger
 from confs.swagger import swagger_config, swagger_template
 from blueprints.competition import competition_bp
 from blueprints.evaluation import eval_bp
+from blueprints.dashboard import dashboard_bp
 
 
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -22,6 +23,7 @@ from models import *
 app.register_blueprint(user_bp, url_prefix="/api")
 app.register_blueprint(competition_bp, url_prefix="/api")
 app.register_blueprint(eval_bp, url_prefix="/api")
+app.register_blueprint(dashboard_bp, url_prefix="/api")
 
 if __name__ == "__main__":
     app.run(port=8000, host="0.0.0.0", debug=True)
