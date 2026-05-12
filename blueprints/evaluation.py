@@ -80,7 +80,7 @@ def evaluation_model(comp_id):
         return jsonify({"error": "Nom de fichier invalide"}), 400
 
     extension = file.filename.rsplit(".", 1)[1].lower()
-    if extension not in competition.allowed_formats and f".{extension}" not in competition.allowed_formats:
+    if extension not in ALLOWED_MODELS and f".{extension}" not in ALLOWED_MODELS:
         return jsonify({"error": f"Extension .{extension} non supportée pour cette compétition"}), 400
 
     # ── Sauvegarde physique du fichier ────────────────────────

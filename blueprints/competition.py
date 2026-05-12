@@ -52,7 +52,7 @@ def create_competition():
     """
     current_user_id = get_jwt_identity()
 
-    # ── Validation des données du formulaire ──────────────────
+    # Validation des données du formulaire 
     form_data = request.form.to_dict()
     # Conversion des champs JSON envoyés en string
     import json
@@ -68,11 +68,11 @@ def create_competition():
     except ValidationError as err:
         return jsonify({"message": "Données invalides", "errors": err.messages}), 400
 
-    # ── Vérification de l'unicité du slug ─────────────────────
+    # Vérification de l'unicité du slug 
     if Competition.query.filter_by(slug=validated["slug"]).first():
         return jsonify({"message": "Ce slug est déjà pris par une autre compétition"}), 409
 
-    # ── Gestion des fichiers de datasets (optionnels) ─────────
+    # Gestion des fichiers de datasets (optionnels) 
     train_dataset_path = None
     test_dataset_path  = None
 
@@ -106,7 +106,7 @@ def create_competition():
         test_dataset_path = os.path.join(save_path, f"proc_{proc_filename}")
         processed_file.save(test_dataset_path)
 
-    # ── Enregistrement en base de données ─────────────────────
+    # Enregistrement en base de données
     try:
         from models.competition import MetricName, TaskType
         competition = Competition(
