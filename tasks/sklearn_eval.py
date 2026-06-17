@@ -30,8 +30,10 @@ def run_scikit_evaluation(submission_id):
 
         # 3. On extrait les chemins enregistrés en base
         # Ce sont les chemins vers les fichiers stockés sur le serveur
-        model_path_on_disk = submission.model_path 
-        truth_path_on_disk = competition.processed_dataset_path
+        model_path_on_disk = submission.model_path
+        truth_path_on_disk = competition.test_dataset_path
+
+        print(model_path_on_disk, truth_path_on_disk)
 
         submission.status = "processing"
         db.session.commit()
