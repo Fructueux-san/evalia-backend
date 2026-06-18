@@ -1,0 +1,30 @@
+État du système (admin)
+---
+summary: Consulter l'état des ressources système et des conteneurs Docker
+description: >
+  Réservé aux administrateurs. Retourne la charge CPU, la mémoire, l'espace
+  disque et la liste des conteneurs Docker. Si Docker est indisponible,
+  le champ `containers` contient l'erreur sans faire échouer la requête.
+tags:
+  - Admin
+security:
+  - apiKey: []
+responses:
+  200:
+    description: État du système
+    schema:
+      properties:
+        load_average:
+          type: object
+        memory:
+          type: object
+        disk:
+          type: object
+        containers:
+          type: array
+          items:
+            type: object
+  401:
+    description: Token JWT manquant ou invalide
+  403:
+    description: Droits administrateur requis

@@ -1,0 +1,39 @@
+Supprimer ou archiver une compétition
+---
+summary: Supprimer ou archiver une compétition (créateur ou admin)
+description: >
+  Par défaut, la compétition est archivée (statut ARCHIVED). Pour une
+  suppression définitive en base, passer le paramètre `?hard=true`.
+  Seul le créateur de la compétition ou un administrateur peut effectuer
+  cette action.
+tags:
+  - Competitions
+security:
+  - apiKey: []
+parameters:
+  - name: id
+    in: path
+    type: string
+    format: uuid
+    required: true
+    description: UUID de la compétition
+  - name: hard
+    in: query
+    type: boolean
+    required: false
+    description: Si true, suppression définitive ; sinon archivage
+responses:
+  200:
+    description: Compétition archivée ou supprimée
+    schema:
+      properties:
+        message:
+          type: string
+        status:
+          type: string
+  401:
+    description: Token JWT manquant ou invalide
+  403:
+    description: Accès refusé (ni créateur ni admin)
+  404:
+    description: Compétition introuvable

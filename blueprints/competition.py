@@ -34,8 +34,13 @@ from utils.generic import allowed_file
 
 competition_bp = Blueprint("competitions", __name__)
 
-UPLOAD_FOLDER      = "storage/datasets"
+# Chemin absolu pour que la sauvegarde (relative au cwd) et `send_file`
+# (résolu relativement au root_path de l'app Flask) pointent vers le même
+# emplacement, quel que soit le contexte d'exécution.
+BASE_DIR           = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+UPLOAD_FOLDER      = os.path.join(BASE_DIR, "storage", "datasets")
 ALLOWED_EXTENSIONS = ["csv", "xlsx", "json", "parquet"]
+ALLOWED_IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "webp", "gif"]
 
 
 # ──────────────────────────────────────────────────────────────
@@ -53,7 +58,7 @@ def create_competition():
     """
     current_user_id = get_jwt_identity()
 
-    # Validation des données du formulaire 
+    # ── Validation des données du formulaire ──────────────────
     form_data = request.form.to_dict()
     # Conversion des champs JSON envoyés en string
     import json
@@ -69,11 +74,11 @@ def create_competition():
     except ValidationError as err:
         return jsonify({"message": "Données invalides", "errors": err.messages}), 400
 
-    # Vérification de l'unicité du slug 
+    # ── Vérification de l'unicité du slug ─────────────────────
     if Competition.query.filter_by(slug=validated["slug"]).first():
         return jsonify({"message": "Ce slug est déjà pris par une autre compétition"}), 409
 
-    # Gestion des fichiers de datasets (optionnels) 
+    # ── Gestion des fichiers de datasets (optionnels) ─────────
     train_dataset_path = None
     test_dataset_path  = None
 
@@ -107,7 +112,26 @@ def create_competition():
         test_dataset_path = os.path.join(save_path, f"proc_{proc_filename}")
         processed_file.save(test_dataset_path)
 
-    # Enregistrement en base de données
+    # ── Gestion de l'image de couverture (optionnelle) ────────
+    banner_path = None
+    banner_file = request.files.get("banner")
+
+    if banner_file:
+        if not allowed_file(banner_file.filename, ALLOWED_IMAGE_EXTENSIONS):
+            return jsonify({"error": "Format d'image non autorisé pour banner"}), 400
+
+        # Réutilise le dossier de la compétition si déjà créé par un dataset
+        if not (train_dataset_path or test_dataset_path):
+            from uuid import uuid4
+            comp_folder_id = str(uuid4())
+            save_path = os.path.join(UPLOAD_FOLDER, comp_folder_id)
+            os.makedirs(save_path, exist_ok=True)
+
+        banner_filename = secure_filename(banner_file.filename)
+        banner_path     = os.path.join(save_path, f"banner_{banner_filename}")
+        banner_file.save(banner_path)
+
+    # ── Enregistrement en base de données ─────────────────────
     try:
         from models.competition import MetricName, TaskType
         competition = Competition(
@@ -127,7 +151,7 @@ def create_competition():
             evaluation_description  = validated.get("evaluation_description"),
             prizes                  = validated.get("prizes"),
             faq                     = validated.get("faq"),
-            banner_url              = validated.get("banner_url"),
+            banner_url              = banner_path or validated.get("banner_url"),
             registration_start      = validated.get("registration_start"),
             results_date            = validated.get("results_date"),
             secondary_metrics       = validated.get("secondary_metrics"),
@@ -266,9 +290,123 @@ def get_my_competitions():
 @competition_bp.route("/competitions/<uuid:id>", methods=["GET"])
 @swag_from("/app/docs/competition/detail.yaml")
 def get_competition(id):
-    """Retourne les détails publics d'une compétition."""
+    """Retourne les détails publics d'une compétition, enrichis des infos de participation si JWT présent."""
+    from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
+    from models.submission import Submission
+
     competition = Competition.query.get_or_404(id, description="Compétition introuvable")
-    return jsonify(competition.to_public_dict()), 200
+    data = competition.to_public_dict()
+
+    # JWT optionnel : on tente de récupérer l'identité sans bloquer si absent
+    current_user_id = None
+    try:
+        verify_jwt_in_request(optional=True)
+        current_user_id = get_jwt_identity()
+    except Exception:
+        pass
+
+    if current_user_id:
+        user = User.query.get(current_user_id)
+        is_joined = user in competition.participants if user else False
+
+        my_best_score = None
+        my_submissions_count = 0
+        my_rank = None
+
+        if is_joined:
+            my_submissions_count = Submission.query.filter_by(
+                user_id=current_user_id,
+                competition_id=competition.id,
+            ).count()
+
+            best = (
+                Submission.query
+                .filter_by(user_id=current_user_id, competition_id=competition.id)
+                .filter(Submission.score.isnot(None))
+                .order_by(Submission.score.desc())
+                .first()
+            )
+            my_best_score = best.score if best else None
+
+        data["my_participation"] = {
+            "is_joined":          is_joined,
+            "my_best_score":      my_best_score,
+            "my_submissions_count": my_submissions_count,
+            "my_rank":            my_rank,  # calculé côté leaderboard
+        }
+    else:
+        data["my_participation"] = None
+
+    return jsonify(data), 200
+
+
+# ──────────────────────────────────────────────────────────────
+#  PUT /api/competitions/<id>
+# ──────────────────────────────────────────────────────────────
+
+@competition_bp.route("/competitions/<uuid:id>", methods=["PUT"])
+@jwt_required()
+def update_competition(id):
+    """Met à jour les détails d'une compétition (créateur ou admin uniquement)."""
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    competition = Competition.query.get_or_404(id, description="Compétition introuvable")
+
+    if str(competition.created_by) != current_user_id and (not user or not user.is_admin):
+        return jsonify({"message": "Accès refusé"}), 403
+
+    form_data = request.form.to_dict()
+    import json
+    for field in ("prizes", "faq", "secondary_metrics", "allowed_formats"):
+        if field in form_data and isinstance(form_data[field], str):
+            try:
+                form_data[field] = json.loads(form_data[field])
+            except (ValueError, TypeError):
+                pass
+
+    from validators.competition import UpdateCompetitionSchema
+    try:
+        validated = UpdateCompetitionSchema().load(form_data)
+    except ValidationError as err:
+        return jsonify({"message": "Données invalides", "errors": err.messages}), 400
+
+    # Fichiers
+    raw_file = request.files.get("raw_dataset")
+    processed_file = request.files.get("processed_dataset")
+    
+    if raw_file or processed_file:
+        from uuid import uuid4
+        comp_folder_id = str(uuid4())
+        save_path = os.path.join(UPLOAD_FOLDER, comp_folder_id)
+        os.makedirs(save_path, exist_ok=True)
+
+        if raw_file:
+            if not allowed_file(raw_file.filename, ALLOWED_EXTENSIONS):
+                return jsonify({"error": "Format non autorisé pour raw_dataset"}), 400
+            raw_filename = secure_filename(raw_file.filename)
+            competition.train_dataset_path = os.path.join(save_path, f"raw_{raw_filename}")
+            raw_file.save(competition.train_dataset_path)
+
+        if processed_file:
+            if not allowed_file(processed_file.filename, ALLOWED_EXTENSIONS):
+                return jsonify({"error": "Format non autorisé pour processed_dataset"}), 400
+            proc_filename = secure_filename(processed_file.filename)
+            competition.test_dataset_path = os.path.join(save_path, f"proc_{proc_filename}")
+            processed_file.save(competition.test_dataset_path)
+
+    # Mise à jour des champs
+    for key, value in validated.items():
+        if hasattr(competition, key):
+            setattr(competition, key, value)
+
+    try:
+        db.session.commit()
+        return jsonify({"message": "Compétition mise à jour", "id": str(competition.id)}), 200
+    except SQLAlchemyError as err:
+        db.session.rollback()
+        logger.error(err)
+        return jsonify({"message": "Erreur lors de la mise à jour"}), 500
+
 
 
 # ──────────────────────────────────────────────────────────────
@@ -445,3 +583,142 @@ def get_processed_dataset(id):
         as_attachment=True,
         download_name=f"processed_data_{id}.csv",
     )
+
+
+# ──────────────────────────────────────────────────────────────
+#  GET /api/competitions/<comp_id>/leaderboard
+# ──────────────────────────────────────────────────────────────
+
+@competition_bp.route("/competitions/<uuid:comp_id>/leaderboard", methods=["GET"])
+@swag_from("/app/docs/competition/leaderboard.yaml")
+def get_leaderboard(comp_id):
+    """Retourne le classement d'une compétition.
+
+    Paramètres de requête optionnels :
+      - page / per_page : pagination du classement.
+      - user_id         : retourne l'historique de progression de l'utilisateur
+                          (toutes ses soumissions complétées dans l'ordre chronologique)
+                          au lieu du classement global.
+    """
+    from models.submission import Submission
+
+    competition = Competition.query.get_or_404(comp_id, description="Compétition introuvable")
+
+    # Sens du tri selon la métrique principale (ex: RMSE → plus bas = mieux)
+    higher_is_better = competition.primary_metric_info.get("higher_is_better", True)
+
+    # ── Historique de progression d'un utilisateur ────────────
+    user_filter = request.args.get("user_id")
+    if user_filter:
+        history = (
+            Submission.query
+            .filter_by(competition_id=comp_id, user_id=user_filter, status="completed")
+            .filter(Submission.score.isnot(None))
+            .order_by(Submission.created_at.asc())
+            .all()
+        )
+        return jsonify({
+            "competition_id": str(comp_id),
+            "user_id":        user_filter,
+            "metric":         competition.primary_metric.value,
+            "count":          len(history),
+            "history":        [s.to_dict() for s in history],
+        }), 200
+
+    # ── Classement global : meilleure soumission par utilisateur ─
+    completed = (
+        Submission.query
+        .filter_by(competition_id=comp_id, status="completed")
+        .filter(Submission.score.isnot(None))
+        .all()
+    )
+
+    best_by_user = {}
+    for sub in completed:
+        uid = str(sub.user_id)
+        current = best_by_user.get(uid)
+        is_better = (
+            current is None
+            or (sub.score > current.score if higher_is_better else sub.score < current.score)
+        )
+        if is_better:
+            best_by_user[uid] = sub
+
+    ranked = sorted(best_by_user.values(), key=lambda s: s.score, reverse=higher_is_better)
+
+    # ── Pagination ────────────────────────────────────────────
+    page     = request.args.get("page", 1, type=int)
+    per_page = min(request.args.get("per_page", 50, type=int), 100)
+    start    = (page - 1) * per_page
+    page_items = ranked[start:start + per_page]
+
+    entries = []
+    for offset, sub in enumerate(page_items):
+        user = User.query.get(sub.user_id)
+        entries.append({
+            "rank":           start + offset + 1,
+            "user": {
+                "id":       str(sub.user_id),
+                "username": user.username if user else None,
+                "name":     user.name if user else None,
+            },
+            "score":          sub.score,
+            "metrics_detail": sub.metrics_detail,
+            "submission_id":  str(sub.id),
+            "submitted_at":   sub.created_at.isoformat() if sub.created_at else None,
+        })
+
+    return jsonify({
+        "competition_id":   str(comp_id),
+        "competition":      competition.title,
+        "metric":           competition.primary_metric.value,
+        "higher_is_better": higher_is_better,
+        "count":            len(ranked),
+        "leaderboard":      entries,
+        "pagination": {
+            "page":     page,
+            "per_page": per_page,
+            "total":    len(ranked),
+        },
+    }), 200
+
+
+# ──────────────────────────────────────────────────────────────
+#  DELETE /api/competitions/<id>
+# ──────────────────────────────────────────────────────────────
+
+@competition_bp.route("/competitions/<uuid:id>", methods=["DELETE"])
+@swag_from("/app/docs/competition/delete.yaml")
+@jwt_required()
+def delete_competition(id):
+    """Supprime ou archive une compétition (créateur ou admin uniquement).
+
+    Par défaut, la compétition est *archivée* (statut ARCHIVED).
+    Passer le paramètre de requête `?hard=true` pour une suppression définitive.
+    """
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    competition = Competition.query.get_or_404(id, description="Compétition introuvable")
+
+    if str(competition.created_by) != current_user_id and (not user or not user.is_admin):
+        return jsonify({"message": "Accès refusé"}), 403
+
+    hard_delete = request.args.get("hard", "false").lower() == "true"
+
+    try:
+        if hard_delete:
+            db.session.delete(competition)
+            db.session.commit()
+            return jsonify({"message": "Compétition supprimée définitivement"}), 200
+
+        competition.status = CompetitionStatus.ARCHIVED
+        db.session.commit()
+        return jsonify({
+            "message": "Compétition archivée",
+            "status":  competition.status.value,
+        }), 200
+
+    except SQLAlchemyError as err:
+        db.session.rollback()
+        logger.error(err)
+        return jsonify({"message": "Erreur lors de la suppression"}), 500

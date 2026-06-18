@@ -1,0 +1,50 @@
+Lister toutes les soumissions (admin)
+---
+summary: Superviser toutes les soumissions de la plateforme
+description: >
+  Réservé aux administrateurs. Liste toutes les soumissions avec filtres
+  optionnels par statut, compétition et utilisateur.
+tags:
+  - Admin
+security:
+  - apiKey: []
+parameters:
+  - name: page
+    in: query
+    type: integer
+    required: false
+  - name: per_page
+    in: query
+    type: integer
+    required: false
+    description: Max 100
+  - name: status
+    in: query
+    type: string
+    required: false
+    enum: [pending, processing, completed, failed]
+  - name: competition_id
+    in: query
+    type: string
+    format: uuid
+    required: false
+  - name: user_id
+    in: query
+    type: string
+    format: uuid
+    required: false
+responses:
+  200:
+    description: Liste paginée des soumissions
+    schema:
+      properties:
+        submissions:
+          type: array
+          items:
+            type: object
+        pagination:
+          type: object
+  401:
+    description: Token JWT manquant ou invalide
+  403:
+    description: Droits administrateur requis

@@ -60,3 +60,54 @@ class CreateCompetitionSchema(Schema):
                 "La date de clôture doit être postérieure à la date de début.",
                 field_name="end_date"
             )
+
+
+class UpdateCompetitionSchema(Schema):
+    """Valide les données de mise à jour d'une compétition."""
+
+    title       = fields.Str(required=False, validate=validate.Length(min=3, max=255))
+    description = fields.Str(required=False, validate=validate.Length(min=10))
+
+    task_type = fields.Str(required=False, validate=validate.OneOf([
+        "classification", "regression", "clustering", "nlp", "computer_vision"
+    ]))
+
+    primary_metric = fields.Str(required=False, validate=validate.OneOf([
+        "accuracy", "f1_score", "precision", "recall", "auc_roc",
+        "log_loss", "rmse", "mae", "r2", "mape"
+    ]))
+
+    start_date = fields.DateTime(required=False)
+    end_date   = fields.DateTime(required=False)
+
+    # Champs optionnels
+    problem_statement      = fields.Str(required=False, allow_none=True)
+    rules                  = fields.Str(required=False, allow_none=True)
+    data_description       = fields.Str(required=False, allow_none=True)
+    evaluation_description = fields.Str(required=False, allow_none=True)
+    banner_url             = fields.Url(required=False, allow_none=True)
+
+    registration_start = fields.DateTime(required=False, allow_none=True)
+    results_date       = fields.DateTime(required=False, allow_none=True)
+
+    secondary_metrics = fields.List(fields.Str(), required=False, allow_none=True)
+    prizes            = fields.List(fields.Dict(), required=False, allow_none=True)
+    faq               = fields.List(fields.Dict(), required=False, allow_none=True)
+    evaluation_config = fields.Dict(required=False, allow_none=True)
+    allowed_formats   = fields.List(fields.Str(), required=False, allow_none=True)
+
+    max_submissions_per_day   = fields.Int(required=False, validate=validate.Range(min=1, max=100))
+    max_submissions_total     = fields.Int(required=False, validate=validate.Range(min=1, max=1000))
+    max_file_size_mb          = fields.Int(required=False, validate=validate.Range(min=1, max=5000))
+    execution_timeout_seconds = fields.Int(required=False, validate=validate.Range(min=10, max=3600))
+
+    @validates_schema
+    def validate_dates(self, data, **kwargs):
+        """Vérifie que end_date est postérieure à start_date si les deux sont fournis."""
+        start = data.get("start_date")
+        end   = data.get("end_date")
+        if start and end and end <= start:
+            raise ValidationError(
+                "La date de clôture doit être postérieure à la date de début.",
+                field_name="end_date"
+            )

@@ -1,0 +1,68 @@
+Classement d'une compétition
+---
+summary: Récupérer le classement (leaderboard) d'une compétition
+description: >
+  Retourne le classement d'une compétition basé sur la meilleure soumission
+  complétée de chaque participant, trié selon la métrique principale
+  (sens du tri déterminé par `higher_is_better`). Si le paramètre `user_id`
+  est fourni, retourne plutôt l'historique de progression de cet utilisateur.
+tags:
+  - Competitions
+parameters:
+  - name: comp_id
+    in: path
+    type: string
+    format: uuid
+    required: true
+    description: UUID de la compétition
+  - name: page
+    in: query
+    type: integer
+    required: false
+    description: Numéro de page (classement global)
+  - name: per_page
+    in: query
+    type: integer
+    required: false
+    description: Nombre d'entrées par page (max 100)
+  - name: user_id
+    in: query
+    type: string
+    format: uuid
+    required: false
+    description: Si fourni, retourne l'historique de progression de l'utilisateur
+responses:
+  200:
+    description: Classement ou historique de progression
+    schema:
+      properties:
+        competition_id:
+          type: string
+          format: uuid
+        competition:
+          type: string
+        metric:
+          type: string
+        higher_is_better:
+          type: boolean
+        count:
+          type: integer
+        leaderboard:
+          type: array
+          items:
+            type: object
+            properties:
+              rank:
+                type: integer
+              user:
+                type: object
+              score:
+                type: number
+              metrics_detail:
+                type: object
+              submission_id:
+                type: string
+              submitted_at:
+                type: string
+  404:
+    description: Compétition introuvable

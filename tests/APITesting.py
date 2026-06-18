@@ -16,8 +16,10 @@ Exécution :
     docker exec -it backend-evalia python3 -m pytest -v tests/APITesting.py -o cache_dir=/tmp
 """
 
+import io
 import logging
 import os
+import shutil
 import unittest
 import uuid
 from datetime import datetime, timedelta
@@ -45,13 +47,21 @@ def make_user_payload(prefix: str = "user") -> dict:
     }
 
 
+def make_csv_file(filename: str = "dataset.csv") -> tuple:
+    """Retourne un tuple (file, filename) prêt pour un upload multipart Flask."""
+    content = b"area,price\n2600,550000\n3000,565000\n3200,610000\n"
+    return (io.BytesIO(content), filename)
+
+
 def make_competition_form(prefix: str = "comp") -> dict:
     """Construit un formulaire de création de compétition valide et unique."""
     suffix = _unique_suffix()
     start = datetime.utcnow() + timedelta(days=2)
     end   = datetime.utcnow() + timedelta(days=30)
+    # Le slug n'autorise que [a-z0-9-] : on normalise underscores/majuscules.
+    slug = f"{prefix}-{suffix}".replace("_", "-").lower()
     return {
-        "slug":           f"{prefix}-{suffix}",
+        "slug":           slug,
         "title":          f"Compétition de test {suffix}",
         "description":    "Description suffisamment longue pour la validation.",
         "task_type":      "regression",
@@ -74,6 +84,9 @@ class APITesting(unittest.TestCase):
         "Content-Type": "application/json",
         "Accept":       "application/json",
     }
+
+    _competition_with_data_id = ""
+    _admin_token = ""
 
     _created_user_ids = []
     _created_competition_ids = []
@@ -139,10 +152,16 @@ class APITesting(unittest.TestCase):
                 for sub in Submission.query.filter_by(competition_id=cid).all():
                     db.session.delete(sub)
 
-            # 2. Supprimer les compétitions de test
+            # 2. Supprimer les fichiers de datasets uploadés sur disque, puis
+            #    supprimer les compétitions de test
             for cid in cls._created_competition_ids:
                 comp = db.session.get(Competition, cid)
                 if comp:
+                    for path in (comp.train_dataset_path, comp.test_dataset_path):
+                        if path and os.path.exists(path):
+                            # Supprimer le dossier parent (uuid dédié à la compétition)
+                            parent = os.path.dirname(path)
+                            shutil.rmtree(parent, ignore_errors=True)
                     db.session.delete(comp)
 
             # 3. Supprimer les utilisateurs de test
@@ -512,6 +531,74 @@ class APITesting(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 400)
 
+    def test_30a_create_competition_with_datasets(self):
+        """Création avec dataset d'entraînement (raw) ET dataset de test (processed) → 201.
+
+        - `raw_dataset`       -> train_dataset_path (public)
+        - `processed_dataset` -> test_dataset_path  (verite-terrain, admin only)
+        """
+        form = make_competition_form("with_datasets")
+        form["raw_dataset"]       = make_csv_file("train.csv")
+        form["processed_dataset"] = make_csv_file("test.csv")
+
+        response = self.client.post(
+            "/api/competitions",
+            data=form,
+            headers={"Authorization": f"Bearer {self._token}"},
+            content_type="multipart/form-data",
+        )
+        if response.status_code != 201:
+            logging.info(response.get_data(as_text=True))
+        self.assertEqual(response.status_code, 201)
+        comp_id = response.get_json()["id"]
+        type(self)._competition_with_data_id = comp_id
+        type(self)._created_competition_ids.append(comp_id)
+
+        # Vérifier en base que les deux chemins de datasets sont bien renseignés
+        with app.app_context():
+            from models.competition import Competition
+            comp = db.session.get(Competition, comp_id)
+            self.assertIsNotNone(comp.train_dataset_path)
+            self.assertIsNotNone(comp.test_dataset_path)
+
+    def test_30b_create_competition_invalid_dataset_format(self):
+        """Format de fichier non autorisé pour raw_dataset → 400."""
+        form = make_competition_form("bad_format")
+        form["raw_dataset"] = make_csv_file("malware.exe")
+        response = self.client.post(
+            "/api/competitions",
+            data=form,
+            headers={"Authorization": f"Bearer {self._token}"},
+            content_type="multipart/form-data",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_30c_download_raw_dataset_success(self):
+        """Téléchargement du dataset d'entraînement (public) → 200."""
+        self.assertTrue(
+            getattr(self, "_competition_with_data_id", ""),
+            "Compétition avec datasets non créée (test_30a)",
+        )
+        response = self.client.get(
+            f"/api/competitions/{self._competition_with_data_id}/raw-dataset",
+            headers=self._base_header,
+        )
+        if response.status_code != 200:
+            logging.info(response.get_data(as_text=True))
+        self.assertEqual(response.status_code, 200)
+
+    def test_30d_processed_dataset_not_exposed_publicly(self):
+        """Le dataset de test n'apparaît jamais dans la sérialisation publique."""
+        self.assertTrue(getattr(self, "_competition_with_data_id", ""))
+        response = self.client.get(
+            f"/api/competitions/{self._competition_with_data_id}",
+            headers=self._base_header,
+        )
+        self.assertEqual(response.status_code, 200)
+        raw_body = response.get_data(as_text=True)
+        self.assertNotIn("test_dataset_path", raw_body)
+        self.assertNotIn("proc_", raw_body)
+
 
     #  8. COMPÉTITIONS — détail, participations, statut
 
@@ -710,6 +797,279 @@ class APITesting(unittest.TestCase):
             f"/api/eval/{uuid.uuid4()}/submissions", headers=self._auth_header()
         )
         self.assertEqual(response.status_code, 404)
+
+    # ══════════════════════════════════════════════════════════
+    #  Helpers — utilisateur admin & utilisateur secondaire
+    # ══════════════════════════════════════════════════════════
+
+    @classmethod
+    def _get_admin_token(cls):
+        """Crée (une seule fois) un utilisateur admin et retourne son token JWT.
+
+        Le compte est promu administrateur directement en base, car l'API
+        d'inscription ne permet pas de créer un admin.
+        """
+        if cls._admin_token:
+            return cls._admin_token
+
+        payload = make_user_payload("admintest")
+        reg = cls.client.post("/api/auth/register", json=payload, headers=cls._base_header)
+        uid = reg.get_json()["id"]
+        cls._created_user_ids.append(uid)
+
+        with app.app_context():
+            from models.user import User
+            admin = db.session.get(User, uid)
+            admin.is_admin = True
+            db.session.commit()
+
+        login = cls.client.post(
+            "/api/auth/login",
+            json={"username": payload["username"], "password": payload["password"]},
+            headers=cls._base_header,
+        )
+        cls._admin_token = login.get_json()["access_token"]
+        return cls._admin_token
+
+    def _register_and_login(self, prefix="secondary"):
+        """Inscrit + connecte un nouvel utilisateur, retourne (token, user_id)."""
+        payload = make_user_payload(prefix)
+        reg = self.client.post("/api/auth/register", json=payload, headers=self._base_header)
+        uid = reg.get_json()["id"]
+        type(self)._created_user_ids.append(uid)
+        login = self.client.post(
+            "/api/auth/login",
+            json={"username": payload["username"], "password": payload["password"]},
+            headers=self._base_header,
+        )
+        return login.get_json()["access_token"], uid
+
+    # ══════════════════════════════════════════════════════════
+    #  10. COMPÉTITIONS — Leaderboard
+    # ══════════════════════════════════════════════════════════
+
+    def test_53_leaderboard_existing_competition(self):
+        """Classement d'une compétition existante → 200 + structure attendue."""
+        self.assertTrue(self._competition_id)
+        response = self.client.get(
+            f"/api/competitions/{self._competition_id}/leaderboard",
+            headers=self._base_header,
+        )
+        self.assertEqual(response.status_code, 200)
+        body = response.get_json()
+        self.assertIn("leaderboard", body)
+        self.assertIn("metric", body)
+        self.assertIn("pagination", body)
+
+    def test_54_leaderboard_nonexistent_competition(self):
+        """Classement d'une compétition inexistante → 404."""
+        response = self.client.get(
+            f"/api/competitions/{uuid.uuid4()}/leaderboard", headers=self._base_header
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_55_leaderboard_user_history(self):
+        """Historique de progression d'un utilisateur (param user_id) → 200."""
+        self.assertTrue(self._competition_id)
+        response = self.client.get(
+            f"/api/competitions/{self._competition_id}/leaderboard?user_id={self._user_id}",
+            headers=self._base_header,
+        )
+        self.assertEqual(response.status_code, 200)
+        body = response.get_json()
+        self.assertIn("history", body)
+
+    # ══════════════════════════════════════════════════════════
+    #  11. AUTH — Mise à jour du profil (PUT/PATCH /auth/me)
+    # ══════════════════════════════════════════════════════════
+
+    def test_56_update_me_without_jwt(self):
+        """Mise à jour du profil sans token → 401."""
+        response = self.client.patch(
+            "/api/auth/me", json={"name": "Nouveau"}, headers=self._base_header
+        )
+        self.assertEqual(response.status_code, 401)
+
+    def test_57_update_me_wrong_content_type(self):
+        """Content-Type non JSON → 415."""
+        response = self.client.patch(
+            "/api/auth/me",
+            data="name=foo",
+            headers={"Authorization": f"Bearer {self._token}"},
+            content_type="text/plain",
+        )
+        self.assertEqual(response.status_code, 415)
+
+    def test_58_update_me_name_success(self):
+        """Mise à jour du nom avec token valide → 200."""
+        response = self.client.patch(
+            "/api/auth/me",
+            json={"name": "Reference Updated"},
+            headers=self._auth_header(),
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["name"], "Reference Updated")
+
+    def test_59_update_me_password_wrong_current(self):
+        """Changement de mot de passe avec mauvais mot de passe actuel → 400."""
+        response = self.client.patch(
+            "/api/auth/me",
+            json={"password": "NewPass123!", "current_password": "WRONG"},
+            headers=self._auth_header(),
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_60_update_me_username_conflict(self):
+        """Username déjà pris par un autre utilisateur → 409."""
+        other = make_user_payload("conflict")
+        reg = self.client.post("/api/auth/register", json=other, headers=self._base_header)
+        type(self)._created_user_ids.append(reg.get_json()["id"])
+
+        response = self.client.patch(
+            "/api/auth/me",
+            json={"username": other["username"]},
+            headers=self._auth_header(),
+        )
+        self.assertEqual(response.status_code, 409)
+
+    # ══════════════════════════════════════════════════════════
+    #  12. COMPÉTITIONS — Suppression / archivage
+    # ══════════════════════════════════════════════════════════
+
+    def test_61_delete_competition_without_jwt(self):
+        """Suppression sans token → 401."""
+        self.assertTrue(self._competition_id)
+        response = self.client.delete(f"/api/competitions/{self._competition_id}")
+        self.assertEqual(response.status_code, 401)
+
+    def test_62_delete_competition_not_owner(self):
+        """Suppression par un utilisateur ni créateur ni admin → 403."""
+        self.assertTrue(self._competition_id)
+        other_token, _ = self._register_and_login("notowner")
+        response = self.client.delete(
+            f"/api/competitions/{self._competition_id}",
+            headers={"Authorization": f"Bearer {other_token}"},
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_63_archive_own_competition(self):
+        """Archivage (suppression douce) de sa propre compétition → 200 + statut archived."""
+        form = make_competition_form("to-archive")
+        created = self.client.post(
+            "/api/competitions",
+            data=form,
+            headers={"Authorization": f"Bearer {self._token}"},
+            content_type="multipart/form-data",
+        )
+        self.assertEqual(created.status_code, 201)
+        comp_id = created.get_json()["id"]
+        type(self)._created_competition_ids.append(comp_id)
+
+        response = self.client.delete(
+            f"/api/competitions/{comp_id}", headers=self._auth_header()
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["status"], "archived")
+
+    # ══════════════════════════════════════════════════════════
+    #  13. ADMIN — supervision (JWT + droits admin requis)
+    # ══════════════════════════════════════════════════════════
+
+    def test_64_admin_users_without_jwt(self):
+        """Lister les utilisateurs sans token → 401."""
+        response = self.client.get("/api/admin/users", headers=self._base_header)
+        self.assertEqual(response.status_code, 401)
+
+    def test_65_admin_users_not_admin(self):
+        """Lister les utilisateurs sans droits admin → 403."""
+        response = self.client.get("/api/admin/users", headers=self._auth_header())
+        self.assertEqual(response.status_code, 403)
+
+    def test_66_admin_users_with_admin(self):
+        """Lister les utilisateurs en tant qu'admin → 200 + pagination."""
+        token = self._get_admin_token()
+        response = self.client.get(
+            "/api/admin/users",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        self.assertEqual(response.status_code, 200)
+        body = response.get_json()
+        self.assertIn("users", body)
+        self.assertIn("pagination", body)
+
+    def test_67_admin_update_user(self):
+        """Modifier le statut d'un utilisateur (suspension) en tant qu'admin → 200."""
+        token = self._get_admin_token()
+        _, target_id = self._register_and_login("target")
+
+        response = self.client.patch(
+            f"/api/admin/users/{target_id}",
+            json={"is_active": False, "is_admin": False},
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["user"]["is_active"], False)
+
+    def test_68_admin_update_user_nonexistent(self):
+        """Modifier un utilisateur inexistant en tant qu'admin → 404."""
+        token = self._get_admin_token()
+        response = self.client.patch(
+            f"/api/admin/users/{uuid.uuid4()}",
+            json={"is_active": False},
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_69_admin_competitions(self):
+        """Vue d'ensemble des compétitions en tant qu'admin → 200."""
+        token = self._get_admin_token()
+        response = self.client.get(
+            "/api/admin/competitions",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("competitions", response.get_json())
+
+    def test_70_admin_submissions(self):
+        """Supervision des soumissions en tant qu'admin → 200."""
+        token = self._get_admin_token()
+        response = self.client.get(
+            "/api/admin/submissions",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("submissions", response.get_json())
+
+    def test_71_admin_system(self):
+        """État du système en tant qu'admin → 200."""
+        token = self._get_admin_token()
+        response = self.client.get(
+            "/api/admin/system",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("disk", response.get_json())
+
+    def test_72_admin_logs(self):
+        """Journaux d'exécution en tant qu'admin → 200."""
+        token = self._get_admin_token()
+        response = self.client.get(
+            "/api/admin/logs?lines=10",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("logs", response.get_json())
+
+    def test_73_admin_endpoints_not_admin(self):
+        """Tous les endpoints admin refusent un utilisateur non-admin → 403."""
+        for path in (
+            "/api/admin/competitions",
+            "/api/admin/submissions",
+            "/api/admin/system",
+            "/api/admin/logs",
+        ):
+            response = self.client.get(path, headers=self._auth_header())
+            self.assertEqual(response.status_code, 403, f"{path} devrait renvoyer 403")
 
 
 if __name__ == "__main__":

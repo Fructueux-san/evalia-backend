@@ -1,0 +1,39 @@
+Journaux d'exécution (admin)
+---
+summary: Consulter les journaux d'un conteneur Docker
+description: >
+  Réservé aux administrateurs. Retourne les dernières lignes de journaux d'un
+  conteneur Docker. Si Docker est indisponible, retourne un message explicatif
+  sans faire échouer la requête.
+tags:
+  - Admin
+security:
+  - apiKey: []
+parameters:
+  - name: container
+    in: query
+    type: string
+    required: false
+    description: "Nom du conteneur (défaut: backend-evalia)"
+  - name: lines
+    in: query
+    type: integer
+    required: false
+    description: "Nombre de lignes à retourner (défaut: 100)"
+responses:
+  200:
+    description: Journaux du conteneur
+    schema:
+      properties:
+        container:
+          type: string
+        lines:
+          type: integer
+        logs:
+          type: array
+          items:
+            type: string
+  401:
+    description: Token JWT manquant ou invalide
+  403:
+    description: Droits administrateur requis
