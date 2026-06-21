@@ -5,7 +5,7 @@ Les tests sont écrits avec `unittest` et utilisent le test client Flask (`app.t
 Ils sont **auto-suffisants** : chaque run crée ses propres données de test 
 (utilisateurs avec UUID unique) et les nettoie automatiquement à la fin.
 
-### Tests couverts (52 tests)
+### Tests couverts (77 tests)
 
 #### Auth — Inscription (`POST /api/auth/register`)
 | # | Scénario | Attendu |
@@ -56,6 +56,10 @@ Ils sont **auto-suffisants** : chaque run crée ses propres données de test
 | 28 | `POST /api/competitions` | Données invalides | 400 |
 | 29 | `POST /api/competitions` | Slug déjà pris | 409 |
 | 30 | `POST /api/competitions` | end_date < start_date | 400 |
+| 30a | `POST /api/competitions` | Création **avec** datasets (train + test) | 201 |
+| 30b | `POST /api/competitions` | Format de dataset non autorisé | 400 |
+| 30c | `GET /api/competitions/<id>/raw-dataset` | Dataset train présent | 200 |
+| 30d | `GET /api/competitions/<id>` | Le dataset de test n'est jamais exposé | absent du JSON |
 | 31 | `GET /api/competitions/<id>` | Détail existant | 200 |
 | 32 | `GET /api/competitions/<id>` | UUID inexistant | 404 |
 | 33 | `GET /api/competitions/<id>` | Identifiant non-UUID | 404 |
@@ -82,6 +86,43 @@ Ils sont **auto-suffisants** : chaque run crée ses propres données de test
 | 50 | `GET /api/eval/<id>/submissions` | Sans JWT | 401 |
 | 51 | `GET /api/eval/<id>/submissions` | Compétition existante | 200 |
 | 52 | `GET /api/eval/<id>/submissions` | Compétition inexistante | 404 |
+
+#### Leaderboard
+| # | Endpoint | Scénario | Attendu |
+|---|----------|----------|---------|
+| 53 | `GET /api/competitions/<id>/leaderboard` | Compétition existante | 200 |
+| 54 | `GET /api/competitions/<id>/leaderboard` | Compétition inexistante | 404 |
+| 55 | `GET /api/competitions/<id>/leaderboard?user_id=` | Historique utilisateur | 200 |
+
+#### Profil — `PUT/PATCH /api/auth/me`
+| # | Scénario | Attendu |
+|---|----------|---------|
+| 56 | Sans JWT | 401 |
+| 57 | Content-Type non JSON | 415 |
+| 58 | Mise à jour du nom | 200 |
+| 59 | Mot de passe actuel incorrect | 400 |
+| 60 | Username déjà pris | 409 |
+
+#### Compétitions — suppression/archivage
+| # | Endpoint | Scénario | Attendu |
+|---|----------|----------|---------|
+| 61 | `DELETE /api/competitions/<id>` | Sans JWT | 401 |
+| 62 | `DELETE /api/competitions/<id>` | Ni créateur ni admin | 403 |
+| 63 | `DELETE /api/competitions/<id>` | Archivage par le créateur | 200 (archived) |
+
+#### Admin (`/api/admin/*`, JWT + droits admin)
+| # | Endpoint | Scénario | Attendu |
+|---|----------|----------|---------|
+| 64 | `GET /admin/users` | Sans JWT | 401 |
+| 65 | `GET /admin/users` | Non admin | 403 |
+| 66 | `GET /admin/users` | Admin | 200 |
+| 67 | `PATCH /admin/users/<id>` | Suspension par admin | 200 |
+| 68 | `PATCH /admin/users/<id>` | Utilisateur inexistant | 404 |
+| 69 | `GET /admin/competitions` | Admin | 200 |
+| 70 | `GET /admin/submissions` | Admin | 200 |
+| 71 | `GET /admin/system` | Admin | 200 |
+| 72 | `GET /admin/logs` | Admin | 200 |
+| 73 | `GET /admin/*` | Non admin (tous) | 403 |
 
 ### Lancer les tests manuellement
 

@@ -1,0 +1,47 @@
+Lister toutes les compétitions (admin)
+---
+summary: Vue d'ensemble de toutes les compétitions (tous statuts)
+description: >
+  Réservé aux administrateurs. Retourne toutes les compétitions y compris
+  les brouillons (DRAFT) et archivées, avec la sérialisation complète admin.
+tags:
+  - Admin
+security:
+  - apiKey: []
+parameters:
+  - name: page
+    in: query
+    type: integer
+    required: false
+  - name: per_page
+    in: query
+    type: integer
+    required: false
+    description: Max 100
+  - name: status
+    in: query
+    type: string
+    required: false
+    enum: [draft, upcoming, active, closed, finished, archived]
+  - name: task_type
+    in: query
+    type: string
+    required: false
+    enum: [classification, regression, clustering, nlp, computer_vision]
+responses:
+  200:
+    description: Liste paginée des compétitions (vue admin)
+    schema:
+      properties:
+        competitions:
+          type: array
+          items:
+            type: object
+        pagination:
+          type: object
+  400:
+    description: Filtre invalide
+  401:
+    description: Token JWT manquant ou invalide
+  403:
+    description: Droits administrateur requis

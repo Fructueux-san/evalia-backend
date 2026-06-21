@@ -180,11 +180,10 @@ class Competition(db.Model):
 
     @property
     def participants_count(self):
-        """Nombre de participants distincts."""
-        from models.submission import Submission
+        """Nombre de participants inscrits."""
         return db.session.query(
-            db.func.count(db.distinct(Submission.user_id))
-        ).filter(Submission.competition_id == self.id).scalar() or 0
+            db.func.count(participations.c.user_id)
+        ).filter(participations.c.competition_id == self.id).scalar() or 0
 
     # ─────────────────────────────────────────
     #  MÉTHODES MÉTIER

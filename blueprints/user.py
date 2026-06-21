@@ -235,3 +235,69 @@ def dashboard():
         ],
         "recent_submissions": [s.to_dict() for s in recent_submissions],
     }), 200
+
+
+# ──────────────────────────────────────────────────────────────
+#  PUT / PATCH /api/auth/me
+# ──────────────────────────────────────────────────────────────
+
+@user_bp.route("/auth/me", methods=["PUT", "PATCH"])
+@swag_from("/app/docs/auth/update_me.yaml")
+@jwt_required()
+def update_me():
+    """Met à jour le profil de l'utilisateur connecté.
+
+    Champs modifiables (tous optionnels) : name, username, email, password.
+    Le changement de mot de passe exige le mot de passe actuel (`current_password`).
+    """
+    if not request.is_json:
+        return jsonify({"message": "Le Content-Type doit être application/json"}), 415
+
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+
+    if not user:
+        return jsonify({"message": "Utilisateur introuvable"}), 404
+
+    data = request.get_json() or {}
+
+    new_username = data.get("username")
+    new_email    = data.get("email")
+    new_name     = data.get("name")
+    new_password = data.get("password")
+
+    # ── Unicité du username ───────────────────────────────────
+    if new_username and new_username != user.username:
+        if User.query.filter_by(username=new_username).first():
+            return jsonify({"message": "Ce nom d'utilisateur est déjà pris"}), 409
+        user.username = new_username
+
+    # ── Unicité de l'email ────────────────────────────────────
+    if new_email and new_email != user.email:
+        if User.query.filter_by(email=new_email).first():
+            return jsonify({"message": "Cet email est déjà utilisé"}), 409
+        user.email = new_email
+
+    if new_name:
+        user.name = new_name
+
+    # ── Changement de mot de passe (vérification de l'ancien) ──
+    if new_password:
+        current_password = data.get("current_password")
+        if not current_password or not bcrypt.check_password_hash(user.password, current_password):
+            return jsonify({"message": "Mot de passe actuel incorrect ou manquant"}), 400
+        user.password = bcrypt.generate_password_hash(new_password).decode("utf-8")  # type: ignore
+
+    try:
+        db.session.commit()
+        return jsonify({
+            "message":  "Profil mis à jour",
+            "id":       str(user.id),
+            "username": user.username,
+            "name":     user.name,
+            "email":    user.email,
+        }), 200
+    except SQLAlchemyError as err:
+        db.session.rollback()
+        logger.error(err)
+        return jsonify({"message": "Une erreur s'est produite"}), 500

@@ -1,0 +1,54 @@
+Mettre à jour son profil
+---
+summary: Mettre à jour le profil de l'utilisateur connecté
+description: >
+  Met à jour le profil de l'utilisateur authentifié. Tous les champs sont
+  optionnels. Le changement de mot de passe nécessite le mot de passe actuel
+  (`current_password`).
+tags:
+  - Auth
+security:
+  - apiKey: []
+parameters:
+  - name: body
+    in: body
+    required: true
+    schema:
+      type: object
+      properties:
+        name:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          description: Nouveau mot de passe
+        current_password:
+          type: string
+          description: Mot de passe actuel (requis si password est fourni)
+responses:
+  200:
+    description: Profil mis à jour
+    schema:
+      properties:
+        message:
+          type: string
+        id:
+          type: string
+        username:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+  400:
+    description: Mot de passe actuel incorrect ou manquant
+  401:
+    description: Token JWT manquant ou invalide
+  409:
+    description: Username ou email déjà utilisé
+  415:
+    description: Content-Type non JSON

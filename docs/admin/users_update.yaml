@@ -1,0 +1,46 @@
+Modifier un utilisateur (admin)
+---
+summary: Modifier le rôle ou le statut d'un utilisateur
+description: >
+  Réservé aux administrateurs. Permet de promouvoir/rétrograder un utilisateur
+  (is_admin) ou de suspendre/réactiver son compte (is_active).
+tags:
+  - Admin
+security:
+  - apiKey: []
+parameters:
+  - name: user_id
+    in: path
+    type: string
+    format: uuid
+    required: true
+    description: UUID de l'utilisateur
+  - name: body
+    in: body
+    required: true
+    schema:
+      type: object
+      properties:
+        is_admin:
+          type: boolean
+          description: Promouvoir/rétrograder en administrateur
+        is_active:
+          type: boolean
+          description: Activer/suspendre le compte
+responses:
+  200:
+    description: Utilisateur mis à jour
+    schema:
+      properties:
+        message:
+          type: string
+        user:
+          type: object
+  401:
+    description: Token JWT manquant ou invalide
+  403:
+    description: Droits administrateur requis
+  404:
+    description: Utilisateur introuvable
+  415:
+    description: Content-Type non JSON
