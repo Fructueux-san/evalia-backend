@@ -85,6 +85,8 @@ COMPETITIONS = [
         "results_date": now + timedelta(days=55),
         "max_submissions_per_day": 5,
         "max_submissions_total": 100,
+        "train_dataset_path": "/app/uploads/seeds/house_price_train.csv",
+        "test_dataset_path": "/app/uploads/seeds/house_price_test.csv",
     },
     {
         "slug": "sentiment-analysis-reviews",
@@ -115,6 +117,8 @@ COMPETITIONS = [
         "results_date": now + timedelta(days=65),
         "max_submissions_per_day": 10,
         "max_submissions_total": 50,
+        "train_dataset_path": "/app/uploads/seeds/sentiment_train.csv",
+        "test_dataset_path": "/app/uploads/seeds/sentiment_test.csv",
     },
 ]
 
@@ -273,6 +277,21 @@ def seed_evaluation(admin_user, participant):
 
 def seed():
     """Insère les données de seed dans la base (idempotent)."""
+    import os
+    os.makedirs("/app/uploads/seeds", exist_ok=True)
+    
+    with open("/app/uploads/seeds/house_price_train.csv", "w") as f:
+        f.write("LotArea,FullBath,YrSold,SalePrice\n8450,2,2008,208500\n9600,2,2007,181500\n")
+        
+    with open("/app/uploads/seeds/house_price_test.csv", "w") as f:
+        f.write("LotArea,FullBath,YrSold,SalePrice\n11250,2,2008,223500\n9550,1,2006,140000\n")
+
+    with open("/app/uploads/seeds/sentiment_train.csv", "w") as f:
+        f.write("text,sentiment\nSuper produit,1\nMauvaise qualite,0\n")
+
+    with open("/app/uploads/seeds/sentiment_test.csv", "w") as f:
+        f.write("text,sentiment\nGenial et rapide,1\nNul a fuir,0\n")
+
     created_users = 0
     created_competitions = 0
 
@@ -307,7 +326,9 @@ def seed():
     for comp_data in COMPETITIONS:
         existing = Competition.query.filter_by(slug=comp_data["slug"]).first()
         if existing:
-            print(f"  Compétition '{comp_data['slug']}' existe déjà")
+            print(f"  Compétition '{comp_data['slug']}' existe déjà. Mise à jour des datasets...")
+            existing.train_dataset_path = comp_data.get("train_dataset_path")
+            existing.test_dataset_path = comp_data.get("test_dataset_path")
             continue
 
         competition = Competition(
@@ -326,6 +347,8 @@ def seed():
             max_submissions_per_day=comp_data.get("max_submissions_per_day", 10),
             max_submissions_total=comp_data.get("max_submissions_total", 50),
             created_by=admin_user.id if admin_user else None,
+            train_dataset_path=comp_data.get("train_dataset_path"),
+            test_dataset_path=comp_data.get("test_dataset_path"),
         )
         db.session.add(competition)
         created_competitions += 1

@@ -143,7 +143,7 @@ def create_competition():
             start_date              = validated["start_date"],
             end_date                = validated["end_date"],
             created_by              = current_user_id,
-            status                  = CompetitionStatus.DRAFT,
+            status                  = CompetitionStatus.UPCOMING,
             # Champs optionnels
             problem_statement       = validated.get("problem_statement"),
             rules                   = validated.get("rules"),
@@ -308,6 +308,7 @@ def get_competition(id):
     if current_user_id:
         user = User.query.get(current_user_id)
         is_joined = user in competition.participants if user else False
+        is_owner = str(competition.created_by) == str(current_user_id) if competition.created_by else False
 
         my_best_score = None
         my_submissions_count = 0
@@ -330,6 +331,7 @@ def get_competition(id):
 
         data["my_participation"] = {
             "is_joined":          is_joined,
+            "is_owner":           is_owner,
             "my_best_score":      my_best_score,
             "my_submissions_count": my_submissions_count,
             "my_rank":            my_rank,  # calculé côté leaderboard
@@ -416,10 +418,16 @@ def update_competition(id):
 @competition_bp.route("/competitions/<uuid:id>/status", methods=["PATCH"])
 @swag_from("/app/docs/competition/status.yaml")
 @jwt_required()
-@admin_required
 def update_competition_status(id):
-    """Change le statut d'une compétition (admin uniquement)."""
+    """Change le statut d'une compétition (créateur ou admin uniquement)."""
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
     competition = Competition.query.get_or_404(id, description="Compétition introuvable")
+
+    # Autoriser le créateur OU un admin
+    is_owner = str(competition.created_by) == str(current_user_id)
+    if not is_owner and (not user or not user.is_admin):
+        return jsonify({"message": "Accès refusé"}), 403
 
     data = request.get_json()
     new_status = data.get("status") if data else None
